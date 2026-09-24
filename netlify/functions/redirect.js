@@ -6,16 +6,17 @@ const supabase = createClient(
 );
 
 export async function handler(event) {
+  // HANYA terima GET (redirect)
+  // POST akan di-handle oleh activate.js
+
   const params = event.queryStringParameters || {};
   const code = params.id || event.path.split('/').pop();
-  const type = params.type || 'unknown'; // 'nfc' | 'qr' | 'unknown'
+  const type = params.type || 'unknown';
 
-  // Validasi kode
   if (!code) {
     return html(400, '<h1>Kode card tidak ada</h1>');
   }
 
-  // Konversi kode A001 → id numerik 001
   const numericId = codeToNumericId(code);
 
   if (!numericId) {
@@ -26,7 +27,6 @@ export async function handler(event) {
     `);
   }
 
-  // Cari card di database
   const { data, error } = await supabase
     .from('cards')
     .select('google_url, active')
@@ -41,7 +41,7 @@ export async function handler(event) {
     `);
   }
 
-  // Increment counter (non-blocking, tidak menghambat redirect)
+  // Increment counter (non-blocking)
   if (type === 'nfc' || type === 'qr') {
     supabase
       .rpc('increment_tap', { card_id: numericId, tap_type: type })
@@ -64,39 +64,22 @@ export async function handler(event) {
   };
 }
 
-// ============================================
-// Konversi kode A001 → id numerik
-// A001 → 001
-// A999 → 999
-// B001 → 1000
-// B002 → 1001
-// B999 → 1998
-// C001 → 1999
-// ============================================
 function codeToNumericId(code) {
-  // Format: 1 huruf + 3 digit (A001, B999, dst.)
   const match = code.match(/^([A-Z])(\d{3})$/);
   if (!match) return null;
 
   const letter = match[1];
   const number = parseInt(match[2], 10);
-  const batchIndex = letter.charCodeAt(0) - 64; // A=1, B=2, C=3, ...
+  const batchIndex = letter.charCodeAt(0) - 64;
 
-  // Rumus: ((batch - 1) * 999) + number
   const numericId = (batchIndex - 1) * 999 + number;
-
-  // Validasi: minimal 1
   if (numericId < 1) return null;
 
-  // Pad 3 digit untuk id ≤ 999, biarkan untuk id ≥ 1000
   return numericId < 1000
     ? String(numericId).padStart(3, '0')
     : String(numericId);
 }
 
-// ============================================
-// Helper: render HTML error page
-// ============================================
 function html(status, body) {
   return {
     statusCode: status,
@@ -108,26 +91,13 @@ function html(status, body) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Error</title>
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      max-width: 480px;
-      margin: 40px auto;
-      padding: 20px;
-      color: #1a1a1a;
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 480px; margin: 40px auto; padding: 20px; color: #1a1a1a; }
     h1 { font-size: 20px; color: #dc2626; }
     p { color: #555; line-height: 1.5; }
-    code {
-      background: #f0f0f0;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 13px;
-    }
+    code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
   </style>
 </head>
-<body>
-  ${body}
-</body>
+<body>${body}</body>
 </html>`
   };
 }
