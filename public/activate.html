@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aktivasi Card</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      max-width: 480px; margin: 0 auto; padding: 24px 16px;
+      background: #f7f7f8; color: #1a1a1a;
+    }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    .sub { color: #666; font-size: 14px; margin-bottom: 20px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+    .tab {
+      flex: 1; padding: 12px; text-align: center; cursor: pointer;
+      background: #eee; border-radius: 10px; font-size: 14px; font-weight: 600;
+    }
+    .tab.active { background: #2563eb; color: white; }
+    input {
+      width: 100%; padding: 14px; font-size: 16px;
+      border: 1px solid #ddd; border-radius: 10px; background: white;
+    }
+    .results {
+      margin-top: 12px; background: white; border-radius: 10px;
+      overflow: hidden; border: 1px solid #eee;
+    }
+    .result-item {
+      padding: 14px; border-bottom: 1px solid #f0f0f0; cursor: pointer;
+    }
+    .result-item:last-child { border-bottom: none; }
+    .result-item:hover { background: #f0f6ff; }
+    .result-item.selected { background: #e0efff; border-left: 3px solid #2563eb; }
+    .name { font-weight: 600; font-size: 15px; }
+    .addr { font-size: 13px; color: #666; margin-top: 2px; }
+    .meta { font-size: 12px; color: #888; margin-top: 4px; }
+    .empty { padding: 20px; text-align: center; color: #999; font-size: 14px; }
+    button {
+      width: 100%; padding: 16px; font-size: 16px; font-weight: 600;
+      background: #2563eb; color: white; border: none;
+      border-radius: 10px; margin-top: 20px; cursor: pointer;
+    }
+    button:disabled { background: #c7d2e5; cursor: not-allowed; }
+    .success {
+      text-align: center; padding: 40px 16px;
+      background: white; border-radius: 12px;
+    }
+    .success h2 { color: #16a34a; }
+    .hidden { display: none; }
+    .hint { font-size: 13px; color: #666; margin-top: 8px; line-height: 1.5; }
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid #ccc; border-top-color: #666;
+      border-radius: 50%; animation: spin .6s linear infinite; margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div id="main">
+  <h1>Aktivasi Card</h1>
+  <p class="sub">Card ID: <strong id="cardIdDisplay">-</strong></p>
+
+  <div class="tabs">
+    <div class="tab active" data-mode="places">🔍 Cari Nama Usaha</div>
+    <div class="tab" data-mode="manual">🔗 Paste Link</div>
+  </div>
+
+  <!-- Mode A: Search Places -->
+  <div id="modePlaces">
+    <input type="search" id="searchInput"
+           placeholder="Contoh: Babeh Barbershop" autocomplete="off">
+    <div id="statusMsg" class="empty hidden"></div>
+    <div id="results" class="results hidden"></div>
+  </div>
+
+  <!-- Mode B: Paste Link -->
+  <div id="modeManual" class="hidden">
+    <input type="url" id="manualUrl"
+           placeholder="https://g.page/r/xxx/review">
+    <p class="hint">
+      Dapatkan link dari:<br>
+      • <b>Google Business Profile</b> → menu "Minta ulasan"<br>
+      • Atau tombol "Tulis ulasan" di Google Maps (tap kanan → copy link)
+    </p>
+  </div>
+
+  <button id="submitBtn" disabled>Pilih usaha dulu</button>
+</div>
+
+<div id="success" class="success hidden">
+  <h2>✅ Aktivasi Berhasil!</h2>
+  <p>Card Anda sekarang terhubung ke:</p>
+  <p><strong id="successName"></strong></p>
+  <p style="font-size:13px;color:#666;margin-top:20px">
+    Tap/scan card ini lagi untuk langsung menuju halaman review.
+  </p>
+</div>
+
+<script src="/activate.js"></script>
+</body>
+</html>
