@@ -1,0 +1,23 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/c/*"
+  to = "/.netlify/functions/redirect"
+  status = 200
+
+[[redirects]]
+  from = "/activate"
+  to = "/.netlify/functions/activate"
+  status = 200
+
+[[redirects]]
+  from = "/api/search-places"
+  to = "/.netlify/functions/search-places"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
