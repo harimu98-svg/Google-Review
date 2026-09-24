@@ -425,9 +425,9 @@ async function salesList() {
 }
 
 async function salesManage(body) {
-  const { action, id, data } = body;
+  const { subaction, id, data } = body;
 
-  if (action === 'create') {
+  if (subaction === 'create') {
     if (data.password) {
       data.password_hash = await bcrypt.hash(data.password, 10);
       delete data.password;
@@ -437,7 +437,7 @@ async function salesManage(body) {
     return { success: true };
   }
 
-  if (action === 'update') {
+  if (subaction === 'update') {
     if (data.password) {
       data.password_hash = await bcrypt.hash(data.password, 10);
       delete data.password;
@@ -447,7 +447,7 @@ async function salesManage(body) {
     return { success: true };
   }
 
-  if (action === 'delete') {
+  if (subaction === 'delete') {
     const { error } = await supabase.from('sales').delete().eq('id', id);
     if (error) return { error: error.message };
     return { success: true };
