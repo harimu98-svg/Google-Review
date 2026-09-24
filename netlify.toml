@@ -9,6 +9,20 @@
 # REDIRECT RULES
 # ============================================
 
+# Halaman login (URL cantik)
+[[redirects]]
+  from = "/login"
+  to = "/login.html"
+  status = 200
+  force = true
+
+# Halaman aktivasi card (user)
+[[redirects]]
+  from = "/activate"
+  to = "/activate.html"
+  status = 200
+  force = true
+
 # NFC route
 [[redirects]]
   from = "/n/*"
@@ -23,20 +37,6 @@
   status = 200
   force = true
 
-# Halaman aktivasi (HTML)
-[[redirects]]
-  from = "/activate"
-  to = "/activate.html"
-  status = 200
-  force = true
-
-# Submit aktivasi (POST)
-[[redirects]]
-  from = "/api/activate"
-  to = "/.netlify/functions/activate"
-  status = 200
-  force = true
-
 # Search Places API
 [[redirects]]
   from = "/api/search-places"
@@ -44,7 +44,7 @@
   status = 200
   force = true
 
-# SPA fallback
+# SPA fallback — HARUS paling bawah
 [[redirects]]
   from = "/*"
   to = "/index.html"
