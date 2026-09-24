@@ -2,21 +2,37 @@
   publish = "public"
   functions = "netlify/functions"
 
+# NFC route
 [[redirects]]
-  from = "/c/*"
-  to = "/.netlify/functions/redirect"
+  from = "/n/*"
+  to = "/.netlify/functions/redirect?type=nfc&id=:splat"
   status = 200
 
+# QR route
+[[redirects]]
+  from = "/q/*"
+  to = "/.netlify/functions/redirect?type=qr&id=:splat"
+  status = 200
+
+# Legacy route (opsional, untuk backward compatibility)
+[[redirects]]
+  from = "/c/*"
+  to = "/.netlify/functions/redirect?id=:splat"
+  status = 200
+
+# Aktivasi
 [[redirects]]
   from = "/activate"
   to = "/.netlify/functions/activate"
   status = 200
 
+# Search Places API
 [[redirects]]
   from = "/api/search-places"
   to = "/.netlify/functions/search-places"
   status = 200
 
+# Fallback
 [[redirects]]
   from = "/*"
   to = "/index.html"
