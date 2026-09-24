@@ -6,7 +6,6 @@ if (!session || !session.success) {
   throw new Error('Not logged in');
 }
 
-// ===== INIT DASHBOARD =====
 document.getElementById('userName').textContent = session.nama;
 document.getElementById('userRole').textContent = session.role === 'admin' ? 'Admin' : 'Sales';
 
@@ -48,9 +47,47 @@ function formatRupiah(n) {
   return 'Rp ' + (n || 0).toLocaleString('id-ID');
 }
 
-function formatTanggal(iso) {
-  if (!iso) return '-';
-  return new Date(iso).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => (
+    { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+  ));
+}
+
+// ===== PARSE CARD IDS =====
+function parseCardIds(input) {
+  const ids = [];
+  const parts = input.split(',').map(s => s.trim()).filter(Boolean);
+
+  for (const part of parts) {
+    const rangeMatch = part.match(/^([A-Z])(\d{3})\s*-\s*([A-Z]?)(\d{3})$/);
+    if (rangeMatch) {
+      const [, startLetter, startNum, endLetter, endNum] = rangeMatch;
+      const startNumeric = codeToNum(startLetter, startNum);
+      const endNumeric = codeToNum(endLetter || startLetter, endNum);
+      if (startNumeric && endNumeric) {
+        for (let i = startNumeric; i <= endNumeric; i++) {
+          ids.push(numToCode(i));
+        }
+        continue;
+      }
+    }
+    if (/^[A-Z]\d{3}$/.test(part)) { ids.push(part); continue; }
+    if (/^\d+$/.test(part)) { ids.push(part); continue; }
+  }
+
+  return [...new Set(ids)];
+}
+
+function codeToNum(letter, num) {
+  const batch = letter.charCodeAt(0) - 64;
+  return (batch - 1) * 999 + parseInt(num, 10);
+}
+
+function numToCode(numeric) {
+  const batchIndex = Math.ceil(numeric / 999);
+  const letter = String.fromCharCode(64 + batchIndex);
+  const num = ((numeric - 1) % 999) + 1;
+  return letter + String(num).padStart(3, '0');
 }
 
 // ===== RENDER PAGE =====
@@ -62,7 +99,8 @@ function renderPage(page) {
     case 'dashboard': return renderDashboard(el);
     case 'cards': return renderCards(el);
     case 'create': return renderCreate(el);
-    case 'update': return renderUpdate(el);
+    case 'sell': return renderSell(el);
+    case 'assign': return renderAssignSales(el);
     case 'sales': return renderSales(el);
   }
 }
@@ -77,35 +115,32 @@ async function renderDashboard(el) {
   if (!data.success) { el.innerHTML = `<div class="error">${data.error}</div>`; return; }
 
   const s = data.stats;
-  el.innerHTML = `
-    <h2>Dashboard</h2>
-    <div class="filter-bar">
-      <div class="form-group">
-        <label>Dari Tanggal</label>
-        <input type="date" id="filterDari">
-      </div>
-      <div class="form-group">
-        <label>Sampai Tanggal</label>
-        <input type="date" id="filterSampai">
-      </div>
-      <button class="btn btn-primary btn-sm" id="applyFilter" style="margin-bottom:1px">Terapkan</button>
-    </div>
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-label">Total Card</div><div class="stat-value">${s.total || s.total_card || 0}</div></div>
-      <div class="stat-card"><div class="stat-label">Terjual</div><div class="stat-value">${s.sold || s.total_card || 0}</div></div>
-      <div class="stat-card"><div class="stat-label">Penjualan</div><div class="stat-value">${formatRupiah(s.total_penjualan)}</div></div>
-      <div class="stat-card"><div class="stat-label">Komisi</div><div class="stat-value">${formatRupiah(s.total_komisi)}</div></div>
-    </div>
-    ${session.role === 'admin' ? renderSalesReport(data.salesReport || []) : ''}
-  `;
 
-  document.getElementById('applyFilter').addEventListener('click', () => {
-    const dari = document.getElementById('filterDari').value;
-    const sampai = document.getElementById('filterSampai').value;
-    if (dari) session._dari = dari;
-    if (sampai) session._sampai = sampai;
-    renderDashboard(el);
-  });
+  if (session.role === 'admin') {
+    el.innerHTML = `
+      <h2>Dashboard Admin</h2>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Total Card</div><div class="stat-value">${s.total || 0}</div></div>
+        <div class="stat-card"><div class="stat-label">Printed</div><div class="stat-value">${s.printed || 0}</div></div>
+        <div class="stat-card"><div class="stat-label">Sold</div><div class="stat-value">${s.sold || 0}</div></div>
+        <div class="stat-card"><div class="stat-label">Assigned</div><div class="stat-value">${s.assigned || 0}</div></div>
+        <div class="stat-card"><div class="stat-label">Activated</div><div class="stat-value">${s.activated || 0}</div></div>
+        <div class="stat-card"><div class="stat-label">Penjualan</div><div class="stat-value">${formatRupiah(s.total_penjualan)}</div></div>
+        <div class="stat-card"><div class="stat-label">Komisi</div><div class="stat-value">${formatRupiah(s.total_komisi)}</div></div>
+      </div>
+      ${renderSalesReport(data.salesReport || [])}
+    `;
+  } else {
+    el.innerHTML = `
+      <h2>Dashboard Saya</h2>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Total Card</div><div class="stat-value">${s.total_card || 0}</div></div>
+        <div class="stat-card"><div class="stat-label">Activated</div><div class="stat-value">${s.total_activated || 0}</div></div>
+        <div class="stat-card"><div class="stat-label">Penjualan</div><div class="stat-value">${formatRupiah(s.total_penjualan)}</div></div>
+        <div class="stat-card"><div class="stat-label">Komisi</div><div class="stat-value">${formatRupiah(s.total_komisi)}</div></div>
+      </div>
+    `;
+  }
 }
 
 function renderSalesReport(rows) {
@@ -113,12 +148,12 @@ function renderSalesReport(rows) {
   return `
     <h3>Performa Sales</h3>
     <table class="table">
-      <thead><tr><th>Nama</th><th>Area</th><th>Terjual</th><th>Penjualan</th><th>Komisi</th><th>Target</th></tr></thead>
+      <thead><tr><th>Nama</th><th>Area</th><th>Activated</th><th>Penjualan</th><th>Komisi</th><th>Target</th></tr></thead>
       <tbody>
         ${rows.map(r => `
           <tr>
-            <td>${r.nama}</td>
-            <td>${r.area}</td>
+            <td>${escapeHtml(r.nama)}</td>
+            <td>${escapeHtml(r.area)}</td>
             <td>${r.total_card}</td>
             <td>${formatRupiah(r.total_penjualan)}</td>
             <td>${formatRupiah(r.total_komisi)}</td>
@@ -133,6 +168,11 @@ function renderSalesReport(rows) {
 // ===== CARDS =====
 async function renderCards(el) {
   const params = session.role === 'sales' ? { sales_id: session.sales_id } : {};
+
+  const salesData = session.role === 'admin' ? await api('sales-list') : { data: [] };
+  const salesMap = {};
+  (salesData.data || []).forEach(s => { salesMap[s.id] = s.nama; });
+
   const data = await api('cards-search', params);
 
   el.innerHTML = `
@@ -144,25 +184,35 @@ async function renderCards(el) {
   document.getElementById('searchInput').addEventListener('input', async (e) => {
     const q = e.target.value.trim();
     const d = await api('cards-search', { ...params, q });
-    renderCardsTable(d.data || []);
+    renderCardsTable(d.data || [], salesMap);
   });
 
-  renderCardsTable(data.data || []);
+  renderCardsTable(data.data || [], salesMap);
 }
 
-function renderCardsTable(rows) {
+function renderCardsTable(rows, salesMap = {}) {
   const el = document.getElementById('cardsTable');
   if (!rows.length) { el.innerHTML = '<div class="empty">Tidak ada data</div>'; return; }
   el.innerHTML = `
     <table class="table">
-      <thead><tr><th>ID</th><th>Card ID</th><th>Status</th><th>Usaha</th><th>Harga</th></tr></thead>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Card ID</th>
+          <th>Status</th>
+          <th>Usaha</th>
+          <th>Sales</th>
+          <th>Harga</th>
+        </tr>
+      </thead>
       <tbody>
         ${rows.map(r => `
           <tr>
             <td>${r.id}</td>
             <td>${r.card_id}</td>
             <td><span class="badge badge-${r.status}">${r.status}</span></td>
-            <td>${r.place_name || '-'}</td>
+            <td>${escapeHtml(r.place_name || '-')}</td>
+            <td>${r.sales_id ? escapeHtml(salesMap[r.sales_id] || '?') : '-'}</td>
             <td>${r.harga_jual ? formatRupiah(r.harga_jual) : '-'}</td>
           </tr>
         `).join('')}
@@ -197,73 +247,112 @@ async function renderCreate(el) {
   });
 }
 
-// ===== UPDATE STATUS =====
-async function renderUpdate(el) {
+// ===== SELL (Admin jual langsung) =====
+async function renderSell(el) {
+  el.innerHTML = `
+    <h2>Jual Card (Langsung)</h2>
+    <p style="color:#666;font-size:14px;margin-bottom:16px">
+      Card yang dijual akan berubah status menjadi <strong>sold</strong>.
+    </p>
+
+    <div class="form-group">
+      <label>Card ID — satuan atau range</label>
+      <input type="text" id="cardIds" placeholder="Contoh: B001 atau B001-B010 atau B001, B002">
+      <small style="color:#888;font-size:12px;display:block;margin-top:4px">
+        Format: <code>B001</code> (satuan), <code>B001-B010</code> (range), <code>B001,B002</code> (multiple)
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label>Harga Jual per Card (Rp)</label>
+      <input type="number" id="hargaJual" placeholder="150000" min="0">
+    </div>
+
+    <button class="btn btn-primary" id="sellBtn">Jual Card</button>
+    <div id="sellResult"></div>
+  `;
+
+  document.getElementById('sellBtn').addEventListener('click', async () => {
+    const input = document.getElementById('cardIds').value.trim();
+    const harga_jual = document.getElementById('hargaJual').value;
+
+    if (!input) { alert('Masukkan Card ID'); return; }
+    if (!harga_jual) { alert('Masukkan harga jual'); return; }
+
+    const ids = parseCardIds(input);
+    if (!ids.length) { alert('Format Card ID tidak valid'); return; }
+
+    const btn = document.getElementById('sellBtn');
+    btn.disabled = true; btn.textContent = 'Memproses...';
+
+    const data = await api('cards-sell', { ids, harga_jual });
+
+    document.getElementById('sellResult').innerHTML = data.success
+      ? `<div class="success">✅ ${data.updated} card dijual</div>`
+      : `<div class="error">❌ ${data.error}</div>`;
+
+    btn.disabled = false; btn.textContent = 'Jual Card';
+  });
+}
+
+// ===== ASSIGN SALES =====
+async function renderAssignSales(el) {
   const data = await api('sales-list');
 
   el.innerHTML = `
-    <h2>Update Status Card</h2>
+    <h2>Assign Sales ke Card</h2>
+    <p style="color:#666;font-size:14px;margin-bottom:16px">
+      Card akan berubah status menjadi <strong>assigned</strong> dan komisi dihitung saat card <strong>activated</strong>.
+    </p>
+
     <div class="form-group">
-      <label>ID Card (bisa multiple, pisah koma)</label>
-      <input type="text" id="cardIds" placeholder="Contoh: B001, B002, B003">
+      <label>Card ID — satuan atau range</label>
+      <input type="text" id="cardIds" placeholder="Contoh: B001 atau B001-B010 atau B001, B002">
     </div>
+
     <div class="form-group">
-      <label>Status Baru</label>
-      <select id="newStatus">
-        <option value="printed">Printed</option>
-        <option value="sold">Sold</option>
-        <option value="disabled">Disabled</option>
+      <label>Pilih Sales</label>
+      <select id="salesSelect" required>
+        <option value="">-- Pilih Sales --</option>
+        ${(data.data || []).map(s => `
+          <option value="${s.id}">
+            ${escapeHtml(s.nama)} (${escapeHtml(s.area || '-')}) — Komisi: ${formatRupiah(s.komisi_per_card)}
+          </option>
+        `).join('')}
       </select>
     </div>
-    <div id="soldFields" style="display:none">
-      <div class="form-group">
-        <label>Sales</label>
-        <select id="salesSelect">
-          <option value="">-- Pilih Sales --</option>
-          ${(data.data || []).map(s => `<option value="${s.id}" data-komisi="${s.komisi_per_card}">${s.nama} (${s.area || '-'})</option>`).join('')}
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Harga Jual (Rp)</label>
-        <input type="number" id="hargaJual" placeholder="150000" min="0">
-      </div>
-      <div class="form-group">
-        <label>Komisi (Rp) — kosongkan untuk pakai default sales</label>
-        <input type="number" id="komisiInput" placeholder="15000" min="0">
-      </div>
+
+    <div class="form-group">
+      <label>Harga Jual per Card (Rp)</label>
+      <input type="number" id="hargaJual" placeholder="150000" min="0">
     </div>
-    <button class="btn btn-primary" id="updateBtn">Update</button>
-    <div id="updateResult"></div>
+
+    <button class="btn btn-primary" id="assignBtn">Assign Sales</button>
+    <div id="assignResult"></div>
   `;
 
-  document.getElementById('newStatus').addEventListener('change', (e) => {
-    document.getElementById('soldFields').style.display = e.target.value === 'sold' ? 'block' : 'none';
-  });
+  document.getElementById('assignBtn').addEventListener('click', async () => {
+    const input = document.getElementById('cardIds').value.trim();
+    const sales_id = document.getElementById('salesSelect').value;
+    const harga_jual = document.getElementById('hargaJual').value;
 
-  document.getElementById('updateBtn').addEventListener('click', async () => {
-    const ids = document.getElementById('cardIds').value.split(',').map(s => s.trim()).filter(Boolean);
-    const status = document.getElementById('newStatus').value;
-    const sales_id = document.getElementById('salesSelect')?.value;
-    const harga_jual = document.getElementById('hargaJual')?.value;
-    const komisi = document.getElementById('komisiInput')?.value;
+    if (!input) { alert('Masukkan Card ID'); return; }
+    if (!sales_id) { alert('Pilih sales'); return; }
+    if (!harga_jual) { alert('Masukkan harga jual'); return; }
 
-    if (!ids.length) { alert('Masukkan ID card'); return; }
+    const ids = parseCardIds(input);
+    if (!ids.length) { alert('Format Card ID tidak valid'); return; }
 
-    const btn = document.getElementById('updateBtn');
+    const btn = document.getElementById('assignBtn');
     btn.disabled = true; btn.textContent = 'Memproses...';
 
-    const data = await api('cards-update', {
-      ids, status,
-      sales_id: sales_id || undefined,
-      harga_jual: harga_jual || undefined,
-      komisi: komisi || undefined
-    });
+    const data = await api('cards-assign-sales', { ids, sales_id, harga_jual });
 
-    document.getElementById('updateResult').innerHTML = data.success
-      ? `<div class="success">✅ ${data.updated} card di-update ke ${status}</div>`
+    document.getElementById('assignResult').innerHTML = data.success
+      ? `<div class="success">✅ ${data.updated} card di-assign ke sales</div>`
       : `<div class="error">❌ ${data.error}</div>`;
 
-    btn.disabled = false; btn.textContent = 'Update';
+    btn.disabled = false; btn.textContent = 'Assign Sales';
   });
 }
 
@@ -289,7 +378,7 @@ async function renderSales(el) {
 function renderSalesTable(rows) {
   const el = document.getElementById('salesTable');
   if (!rows.length) {
-    el.innerHTML = '<div class="empty">Belum ada sales. Klik "+ Tambah Sales" untuk menambahkan.</div>';
+    el.innerHTML = '<div class="empty">Belum ada sales.</div>';
     return;
   }
 
@@ -345,7 +434,7 @@ function renderSalesForm(sales) {
         </div>
         <div class="form-group">
           <label>Password ${isEdit ? '(kosongkan jika tidak diubah)' : '*'}</label>
-          <input type="text" id="sf_password" ${isEdit ? '' : 'required'} placeholder="${isEdit ? 'Biarkan kosong jika tidak diubah' : 'Password untuk login'}">
+          <input type="text" id="sf_password" ${isEdit ? '' : 'required'}>
         </div>
         <div class="form-group">
           <label>Email (opsional)</label>
@@ -409,16 +498,9 @@ function renderSalesForm(sales) {
 
     let result;
     if (isEdit) {
-      result = await api('sales-manage', {
-        action: 'update',
-        id: sales.id,
-        data: formData
-      });
+      result = await api('sales-manage', { action: 'update', id: sales.id, data: formData });
     } else {
-      result = await api('sales-manage', {
-        action: 'create',
-        data: formData
-      });
+      result = await api('sales-manage', { action: 'create', data: formData });
     }
 
     if (result.success) {
@@ -429,24 +511,17 @@ function renderSalesForm(sales) {
         renderPage('sales');
       }, 1000);
     } else {
-      document.getElementById('salesFormMsg').innerHTML = 
-        `<div class="error">❌ ${result.error}</div>`;
+      document.getElementById('salesFormMsg').innerHTML = `<div class="error">❌ ${result.error}</div>`;
       btn.disabled = false;
       btn.textContent = isEdit ? 'Simpan Perubahan' : 'Tambah Sales';
     }
   });
 }
 
-// Global function untuk edit (dipanggil dari onclick)
 window.editSales = function(sales) {
   renderSalesForm(sales);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-function escapeHtml(s) {
-  return String(s || '').replace(/[&<>"']/g, c => (
-    { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
-  ));
-}
 // ===== INITIAL RENDER =====
 renderPage('dashboard');
