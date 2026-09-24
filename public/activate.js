@@ -109,7 +109,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   }
 
   try {
-    const res = await fetch('/activate', {
+    const res = await fetch('/api/activate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
