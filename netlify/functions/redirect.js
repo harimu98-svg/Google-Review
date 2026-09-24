@@ -6,8 +6,18 @@ const supabase = createClient(
 );
 
 export async function handler(event) {
-  const id = event.path.split('/').pop();
+  const params = event.queryStringParameters || {};
 
+  // Ambil id & type
+  const id = params.id || event.path.split('/').pop();
+  const type = params.type || 'unknown'; // 'nfc' | 'qr' | 'unknown'
+
+  // Validasi id
+  if (!id) {
+    return { statusCode: 400, body: 'Card ID tidak ada' };
+  }
+
+  // Cek card di database
   const { data, error } = await supabase
     .from('cards')
     .select('google_url, active')
@@ -18,8 +28,16 @@ export async function handler(event) {
     return {
       statusCode: 404,
       headers: { 'Content-Type': 'text/html' },
-      body: '<h1>Card tidak ditemukan</h1>'
+      body: `<h1>Card tidak ditemukan</h1><p>ID: ${id}</p>`
     };
+  }
+
+  // Increment counter (non-blocking, jangan tunggu)
+  if (type === 'nfc' || type === 'qr') {
+    supabase
+      .rpc('increment_tap', { card_id: id, tap_type: type })
+      .then(() => {})
+      .catch(err => console.error('Counter error:', err));
   }
 
   // Sudah aktif → redirect ke Google Review
