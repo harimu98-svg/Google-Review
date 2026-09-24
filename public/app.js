@@ -270,19 +270,56 @@ async function renderUpdate(el) {
 // ===== SALES =====
 async function renderSales(el) {
   const data = await api('sales-list');
+  const salesList = data.data || [];
+
   el.innerHTML = `
     <h2>Sales</h2>
+    <button class="btn btn-primary" id="addSalesBtn" style="margin-bottom:16px">+ Tambah Sales</button>
+    <div id="salesForm"></div>
+    <div id="salesTable"></div>
+  `;
+
+  document.getElementById('addSalesBtn').addEventListener('click', () => {
+    renderSalesForm(null);
+  });
+
+  renderSalesTable(salesList);
+}
+
+function renderSalesTable(rows) {
+  const el = document.getElementById('salesTable');
+  if (!rows.length) {
+    el.innerHTML = '<div class="empty">Belum ada sales. Klik "+ Tambah Sales" untuk menambahkan.</div>';
+    return;
+  }
+
+  el.innerHTML = `
     <table class="table">
-      <thead><tr><th>Nama</th><th>Username</th><th>Area</th><th>Komisi/Card</th><th>Target</th><th>Status</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Nama</th>
+          <th>Username</th>
+          <th>Area</th>
+          <th>No HP</th>
+          <th>Komisi/Card</th>
+          <th>Target</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
       <tbody>
-        ${(data.data || []).map(s => `
+        ${rows.map(s => `
           <tr>
-            <td>${s.nama}</td>
-            <td>${s.username}</td>
-            <td>${s.area || '-'}</td>
+            <td>${escapeHtml(s.nama)}</td>
+            <td>${escapeHtml(s.username)}</td>
+            <td>${escapeHtml(s.area || '-')}</td>
+            <td>${escapeHtml(s.no_hp || '-')}</td>
             <td>${formatRupiah(s.komisi_per_card)}</td>
             <td>${s.target_bulanan}</td>
             <td>${s.aktif ? '✅ Aktif' : '❌ Nonaktif'}</td>
+            <td>
+              <button class="btn btn-outline btn-sm" onclick='editSales(${JSON.stringify(s).replace(/'/g, "&apos;")})'>Edit</button>
+            </td>
           </tr>
         `).join('')}
       </tbody>
@@ -290,5 +327,126 @@ async function renderSales(el) {
   `;
 }
 
+function renderSalesForm(sales) {
+  const isEdit = !!sales;
+  const el = document.getElementById('salesForm');
+
+  el.innerHTML = `
+    <div class="form-card">
+      <h3>${isEdit ? 'Edit Sales' : 'Tambah Sales Baru'}</h3>
+      <form id="salesFormEl">
+        <div class="form-group">
+          <label>Nama Lengkap *</label>
+          <input type="text" id="sf_nama" required value="${escapeHtml(sales?.nama || '')}">
+        </div>
+        <div class="form-group">
+          <label>Username *</label>
+          <input type="text" id="sf_username" required value="${escapeHtml(sales?.username || '')}" ${isEdit ? 'readonly' : ''}>
+        </div>
+        <div class="form-group">
+          <label>Password ${isEdit ? '(kosongkan jika tidak diubah)' : '*'}</label>
+          <input type="text" id="sf_password" ${isEdit ? '' : 'required'} placeholder="${isEdit ? 'Biarkan kosong jika tidak diubah' : 'Password untuk login'}">
+        </div>
+        <div class="form-group">
+          <label>Email (opsional)</label>
+          <input type="email" id="sf_email" value="${escapeHtml(sales?.email || '')}">
+        </div>
+        <div class="form-group">
+          <label>No HP</label>
+          <input type="text" id="sf_no_hp" value="${escapeHtml(sales?.no_hp || '')}" placeholder="6281234567890">
+        </div>
+        <div class="form-group">
+          <label>Area</label>
+          <input type="text" id="sf_area" value="${escapeHtml(sales?.area || '')}" placeholder="Jakarta Selatan">
+        </div>
+        <div class="form-group">
+          <label>Komisi per Card (Rp)</label>
+          <input type="number" id="sf_komisi" value="${sales?.komisi_per_card || 0}" min="0">
+        </div>
+        <div class="form-group">
+          <label>Target Bulanan (jumlah card)</label>
+          <input type="number" id="sf_target" value="${sales?.target_bulanan || 0}" min="0">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="sf_aktif">
+            <option value="true" ${sales?.aktif !== false ? 'selected' : ''}>Aktif</option>
+            <option value="false" ${sales?.aktif === false ? 'selected' : ''}>Nonaktif</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">${isEdit ? 'Simpan Perubahan' : 'Tambah Sales'}</button>
+          <button type="button" class="btn btn-outline" id="cancelSalesBtn">Batal</button>
+        </div>
+      </form>
+      <div id="salesFormMsg"></div>
+    </div>
+  `;
+
+  document.getElementById('cancelSalesBtn').addEventListener('click', () => {
+    el.innerHTML = '';
+  });
+
+  document.getElementById('salesFormEl').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type=submit]');
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+
+    const formData = {
+      nama: document.getElementById('sf_nama').value.trim(),
+      username: document.getElementById('sf_username').value.trim(),
+      email: document.getElementById('sf_email').value.trim(),
+      no_hp: document.getElementById('sf_no_hp').value.trim(),
+      area: document.getElementById('sf_area').value.trim(),
+      komisi_per_card: parseInt(document.getElementById('sf_komisi').value) || 0,
+      target_bulanan: parseInt(document.getElementById('sf_target').value) || 0,
+      aktif: document.getElementById('sf_aktif').value === 'true'
+    };
+
+    const password = document.getElementById('sf_password').value;
+    if (password) formData.password = password;
+
+    let result;
+    if (isEdit) {
+      result = await api('sales-manage', {
+        action: 'update',
+        id: sales.id,
+        data: formData
+      });
+    } else {
+      result = await api('sales-manage', {
+        action: 'create',
+        data: formData
+      });
+    }
+
+    if (result.success) {
+      document.getElementById('salesFormMsg').innerHTML = 
+        `<div class="success">✅ Sales berhasil ${isEdit ? 'diupdate' : 'ditambahkan'}</div>`;
+      setTimeout(() => {
+        document.getElementById('salesForm').innerHTML = '';
+        renderPage('sales');
+      }, 1000);
+    } else {
+      document.getElementById('salesFormMsg').innerHTML = 
+        `<div class="error">❌ ${result.error}</div>`;
+      btn.disabled = false;
+      btn.textContent = isEdit ? 'Simpan Perubahan' : 'Tambah Sales';
+    }
+  });
+}
+
+// Global function untuk edit (dipanggil dari onclick)
+window.editSales = function(sales) {
+  renderSalesForm(sales);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => (
+    { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+  ));
+}
 // ===== INITIAL RENDER =====
 renderPage('dashboard');
