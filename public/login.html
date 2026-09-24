@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — DIGI CARD</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="login-page">
+
+<div class="login-box">
+  <div class="login-header">
+    <h1>DIGI CARD</h1>
+    <p>Google Review NFC & QR Card</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-type="admin">Admin</button>
+    <button class="tab" data-type="sales">Sales</button>
+  </div>
+
+  <form id="loginForm">
+    <div class="form-group">
+      <label id="labelUser">Email</label>
+      <input type="text" id="username" required autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="password" required autocomplete="current-password">
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Masuk</button>
+    <div id="errorMsg" class="error-msg"></div>
+  </form>
+</div>
+
+<script>
+// Kalau sudah login, redirect ke dashboard
+const existing = localStorage.getItem('digicard_session');
+if (existing) {
+  try {
+    const s = JSON.parse(existing);
+    if (s && s.success) location.href = '/';
+  } catch (e) {}
+}
+
+let loginType = 'admin';
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    loginType = tab.dataset.type;
+    document.getElementById('labelUser').textContent = loginType === 'admin' ? 'Email' : 'Username';
+    document.getElementById('username').type = loginType === 'admin' ? 'email' : 'text';
+  });
+});
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type=submit]');
+  const err = document.getElementById('errorMsg');
+  err.textContent = '';
+  btn.disabled = true;
+  btn.textContent = 'Memuat...';
+
+  try {
+    const res = await fetch('/.netlify/functions/activate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'login',
+        type: loginType,
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value
+      })
+    });
+    const data = await res.json();
+
+    if (!data.success) {
+      err.textContent = data.error || 'Login gagal';
+      return;
+    }
+
+    localStorage.setItem('digicard_session', JSON.stringify(data));
+    location.href = '/';
+  } catch (e) {
+    err.textContent = 'Terjadi kesalahan: ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Masuk';
+  }
+});
+</script>
+
+</body>
+</html>
