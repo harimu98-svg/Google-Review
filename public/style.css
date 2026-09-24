@@ -291,7 +291,10 @@ body {
   gap: 8px;
   margin-top: 16px;
 }
-
+/* ===== BADGE STATUS BARU ===== */
+.badge-sold      { background: #fef3c7; color: #92400e; }
+.badge-assigned  { background: #e0e7ff; color: #3730a3; }
+.badge-activated { background: #d1fae5; color: #065f46; }
 .form-actions .btn { flex: 1; }
 
 @media (max-width: 768px) {
