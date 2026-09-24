@@ -498,9 +498,9 @@ function renderSalesForm(sales) {
 
     let result;
     if (isEdit) {
-      result = await api('sales-manage', { action: 'update', id: sales.id, data: formData });
+      result = await api('sales-manage', { subaction: 'update', id: sales.id, data: formData });
     } else {
-      result = await api('sales-manage', { action: 'create', data: formData });
+      result = await api('sales-manage', { subaction: 'create', data: formData });
     }
 
     if (result.success) {
