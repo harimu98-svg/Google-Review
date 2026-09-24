@@ -9,36 +9,42 @@
 # REDIRECT RULES
 # ============================================
 
-# NFC route: /n/A001 → function redirect
+# NFC route
 [[redirects]]
   from = "/n/*"
   to = "/.netlify/functions/redirect?type=nfc&id=:splat"
   status = 200
   force = true
 
-# QR route: /q/A001 → function redirect
+# QR route
 [[redirects]]
   from = "/q/*"
   to = "/.netlify/functions/redirect?type=qr&id=:splat"
   status = 200
   force = true
 
-# Aktivasi: /activate?id=001 → function activate
+# Halaman aktivasi (HTML)
 [[redirects]]
   from = "/activate"
+  to = "/activate.html"
+  status = 200
+  force = true
+
+# Submit aktivasi (POST)
+[[redirects]]
+  from = "/api/activate"
   to = "/.netlify/functions/activate"
   status = 200
   force = true
 
-# Search Places API: /api/search-places?q=... → function search-places
+# Search Places API
 [[redirects]]
   from = "/api/search-places"
   to = "/.netlify/functions/search-places"
   status = 200
   force = true
 
-# SPA fallback: semua route lain → index.html
-# HARUS PALING BAWAH
+# SPA fallback
 [[redirects]]
   from = "/*"
   to = "/index.html"
