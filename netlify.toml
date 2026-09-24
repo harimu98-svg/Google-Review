@@ -5,35 +5,40 @@
 [functions]
   node_bundler = "esbuild"
 
-# NFC route
+# ============================================
+# REDIRECT RULES
+# ============================================
+
+# NFC route: /n/A001 → function redirect
 [[redirects]]
   from = "/n/*"
   to = "/.netlify/functions/redirect?type=nfc&id=:splat"
   status = 200
   force = true
 
-# QR route
+# QR route: /q/A001 → function redirect
 [[redirects]]
   from = "/q/*"
   to = "/.netlify/functions/redirect?type=qr&id=:splat"
   status = 200
   force = true
 
-# Aktivasi
+# Aktivasi: /activate?id=001 → function activate
 [[redirects]]
   from = "/activate"
   to = "/.netlify/functions/activate"
   status = 200
   force = true
 
-# Search Places API
+# Search Places API: /api/search-places?q=... → function search-places
 [[redirects]]
   from = "/api/search-places"
   to = "/.netlify/functions/search-places"
   status = 200
   force = true
 
-# SPA fallback (HARUS paling bawah)
+# SPA fallback: semua route lain → index.html
+# HARUS PALING BAWAH
 [[redirects]]
   from = "/*"
   to = "/index.html"
