@@ -2,15 +2,12 @@
    TEMA: Google Maps Colors
    ============================================ */
 :root {
-  /* Google Maps Colors */
   --gm-red:        #EA4335;
   --gm-yellow:     #FBBC05;
   --gm-green:      #34A853;
   --gm-blue:       #4285F4;
   --gm-blue-dark:  #1A73E8;
   --gm-blue-darker:#174EA6;
-  
-  /* Netral */
   --bg:            #F8F9FA;
   --white:         #FFFFFF;
   --text:          #202124;
@@ -221,7 +218,7 @@ a:hover { text-decoration: underline; }
 .fitur-card:hover { transform: translateY(-4px); }
 
 .fitur-icon { font-size: 36px; margin-bottom: 12px; }
-.fitur-card h3 { font-size: 16px; margin-bottom: 8px; color: var(--text); }
+.fitur-card h3 { font-size: 16px; margin-bottom: 8px; }
 .fitur-card p { font-size: 14px; color: var(--text-muted); }
 
 /* ===== PRODUK ===== */
@@ -240,21 +237,9 @@ a:hover { text-decoration: underline; }
   border: 1px solid var(--border);
 }
 
-.produk-img {
-  font-size: 64px;
-  margin-bottom: 12px;
-}
-
-.produk-card h3 {
-  font-size: 16px;
-  margin-bottom: 8px;
-  color: var(--text);
-}
-
-.produk-card p {
-  font-size: 14px;
-  color: var(--text-muted);
-}
+.produk-img { font-size: 64px; margin-bottom: 12px; }
+.produk-card h3 { font-size: 16px; margin-bottom: 8px; }
+.produk-card p { font-size: 14px; color: var(--text-muted); }
 
 /* ===== HARGA ===== */
 .harga-grid {
@@ -272,11 +257,7 @@ a:hover { text-decoration: underline; }
   border: 2px solid var(--gm-blue);
 }
 
-.harga-card h3 {
-  font-size: 15px;
-  margin-bottom: 16px;
-  color: var(--text);
-}
+.harga-card h3 { font-size: 15px; margin-bottom: 16px; }
 
 .harga-value {
   font-size: 28px;
@@ -335,23 +316,14 @@ a:hover { text-decoration: underline; }
   text-align: center;
 }
 
-.btn-primary {
-  background: var(--gm-blue);
-  color: white;
-}
+.btn-primary { background: var(--gm-blue); color: white; }
 .btn-primary:hover { background: var(--gm-blue-dark); text-decoration: none; }
 .btn-primary:disabled { background: #A8C7FA; cursor: not-allowed; }
 
-.btn-success {
-  background: var(--gm-green);
-  color: white;
-}
+.btn-success { background: var(--gm-green); color: white; }
 .btn-success:hover { background: #2D8E47; text-decoration: none; }
 
-.btn-danger {
-  background: var(--gm-red);
-  color: white;
-}
+.btn-danger { background: var(--gm-red); color: white; }
 .btn-danger:hover { background: #C5221F; text-decoration: none; }
 
 .btn-outline {
@@ -363,7 +335,7 @@ a:hover { text-decoration: underline; }
 
 .btn-outline-white {
   background: transparent;
-  border: 1px solid white;
+  border: 1px solid rgba(255,255,255,.5);
   color: white;
 }
 .btn-outline-white:hover { background: rgba(255,255,255,.1); text-decoration: none; }
@@ -437,16 +409,8 @@ a:hover { text-decoration: underline; }
   box-shadow: 0 4px 12px rgba(0,0,0,.1);
 }
 
-.login-header h1 {
-  font-size: 24px;
-  color: var(--gm-blue-dark);
-  margin-bottom: 4px;
-}
-
-.login-header p {
-  color: var(--text-muted);
-  font-size: 13px;
-}
+.login-header h1 { font-size: 24px; color: var(--gm-blue-dark); margin-bottom: 4px; }
+.login-header p { color: var(--text-muted); font-size: 13px; }
 
 .tabs {
   display: flex;
@@ -482,6 +446,7 @@ a:hover { text-decoration: underline; }
   margin-top: 12px;
   text-align: center;
 }
+
 /* ============================================
    DASHBOARD
    ============================================ */
@@ -515,16 +480,8 @@ a:hover { text-decoration: underline; }
   padding: 2px;
 }
 
-.topbar h1 {
-  font-size: 16px;
-  color: white;
-  line-height: 1.2;
-}
-
-.topbar .brand span {
-  font-size: 11px;
-  opacity: .8;
-}
+.topbar h1 { font-size: 16px; color: white; line-height: 1.2; }
+.topbar .brand span { font-size: 11px; opacity: .8; }
 
 .user-info {
   display: flex;
@@ -571,11 +528,7 @@ a:hover { text-decoration: underline; }
   border-left: 3px solid transparent;
 }
 
-.menu-item:hover {
-  background: var(--hover);
-  border-left-color: var(--gm-blue);
-}
-
+.menu-item:hover { background: var(--hover); border-left-color: var(--gm-blue); }
 .menu-item.active {
   background: var(--gm-blue);
   color: white;
@@ -584,7 +537,7 @@ a:hover { text-decoration: underline; }
 }
 
 .content { flex: 1; min-width: 0; }
-.content h2 { font-size: 22px; margin-bottom: 20px; color: var(--text); }
+.content h2 { font-size: 22px; margin-bottom: 20px; }
 .content h3 { font-size: 16px; margin: 24px 0 12px; color: var(--gm-blue-dark); }
 
 /* ===== STATS ===== */
@@ -657,41 +610,6 @@ a:hover { text-decoration: underline; }
 
 .table tr:hover td { background: var(--bg); }
 
-/* Paginasi */
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  padding: 16px;
-  background: white;
-  border-top: 1px solid var(--border);
-}
-
-.pagination button {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  background: white;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  color: var(--text);
-}
-
-.pagination button:hover:not(:disabled) { background: var(--hover); }
-.pagination button:disabled { opacity: .4; cursor: not-allowed; }
-.pagination button.active {
-  background: var(--gm-blue);
-  color: white;
-  border-color: var(--gm-blue);
-}
-
-.pagination-info {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-right: 12px;
-}
-
 /* ===== BADGE ===== */
 .badge {
   display: inline-block;
@@ -709,6 +627,9 @@ a:hover { text-decoration: underline; }
 .badge-assigned  { background: #E8F0FE; color: #174EA6; }
 .badge-activated { background: #E6F4EA; color: #137333; }
 .badge-disabled  { background: #FCE8E6; color: #C5221F; }
+.badge-pending   { background: #FEF7E0; color: #B06000; }
+.badge-approved  { background: #E6F4EA; color: #137333; }
+.badge-rejected  { background: #FCE8E6; color: #C5221F; }
 
 /* ===== FORM CARD ===== */
 .form-card {
@@ -720,18 +641,9 @@ a:hover { text-decoration: underline; }
   border-left: 4px solid var(--gm-blue);
 }
 
-.form-card h3 {
-  font-size: 16px;
-  color: var(--gm-blue-dark);
-  margin-bottom: 16px;
-}
+.form-card h3 { font-size: 16px; color: var(--gm-blue-dark); margin-bottom: 16px; }
 
-.form-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 16px;
-}
-
+.form-actions { display: flex; gap: 8px; margin-top: 16px; }
 .form-actions .btn { flex: 1; }
 
 /* ===== STATE ===== */
@@ -748,15 +660,14 @@ a:hover { text-decoration: underline; }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-  /* Landing */
   .hero h1 { font-size: 28px; }
   .hero-sub { font-size: 15px; }
   .hero { padding: 48px 0; }
   .section { padding: 40px 0; }
   .section h2 { font-size: 24px; }
-  
+
   .hamburger { display: block; }
-  
+
   .landing-nav {
     display: none;
     position: absolute;
@@ -770,9 +681,9 @@ a:hover { text-decoration: underline; }
     padding: 8px 0;
     box-shadow: 0 4px 12px rgba(0,0,0,.15);
   }
-  
+
   .landing-nav.open { display: flex; }
-  
+
   .landing-nav a,
   .landing-nav .btn-login {
     padding: 12px 20px;
@@ -780,40 +691,37 @@ a:hover { text-decoration: underline; }
     text-align: left;
     width: 100%;
   }
-  
+
   .login-dropdown { width: 100%; }
-  
-  .login-menu {
-    position: static;
-    box-shadow: none;
-    background: rgba(255,255,255,.1);
-    margin: 0;
-  }
-  
+  .login-menu { position: static; box-shadow: none; background: rgba(255,255,255,.1); margin: 0; }
   .login-menu a { color: white; }
   .login-menu a:hover { background: rgba(255,255,255,.1); }
-  
+
   .form-row { grid-template-columns: 1fr; }
-  
-  /* Dashboard */
+
   .container { flex-direction: column; padding: 12px; }
   .menu { width: 100%; flex-direction: row; overflow-x: auto; padding-bottom: 4px; }
-  .menu-item { white-space: nowrap; padding: 10px 14px; font-size: 13px; border-left: none; border-bottom: 3px solid transparent; }
+  .menu-item {
+    white-space: nowrap;
+    padding: 10px 14px;
+    font-size: 13px;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+  }
   .menu-item.active { border-left: none; border-bottom-color: var(--gm-blue-darker); }
-  
+
   .topbar { padding: 10px 16px; }
   .topbar h1 { font-size: 14px; }
   .topbar-logo { width: 32px; height: 32px; }
   .user-info { font-size: 12px; gap: 8px; }
   .user-role { font-size: 10px; padding: 2px 8px; }
-  
+
   .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .stat-value { font-size: 18px; }
-  
+
   .table { font-size: 12px; }
   .table th, .table td { padding: 8px 10px; }
-  
+
   .content h2 { font-size: 18px; }
-  
   .form-actions { flex-direction: column; }
 }
