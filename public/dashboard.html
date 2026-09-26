@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DIGI CARD — Dashboard</title>
+  <link rel="icon" type="image/jpeg" href="/Assets/logo.jpg">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="dashboard-page">
+
+<header class="topbar">
+  <div class="brand">
+    <img src="/Assets/logo.jpg" alt="DIGI CARD" class="topbar-logo">
+    <div>
+      <h1>DIGI CARD</h1>
+      <span>Google Review NFC & QR</span>
+    </div>
+  </div>
+  <div class="user-info">
+    <span id="userName">-</span>
+    <span id="userRole" class="user-role">-</span>
+    <button id="logoutBtn" class="btn btn-outline btn-sm">Keluar</button>
+  </div>
+</header>
+
+<div class="container">
+  <nav class="menu" id="menuAdmin" style="display:none">
+    <button class="menu-item active" data-page="dashboard">📊 Dashboard</button>
+    <button class="menu-item" data-page="cards">💳 Card</button>
+    <button class="menu-item" data-page="create">➕ Buat Card</button>
+    <button class="menu-item" data-page="sell">💰 Jual Card</button>
+    <button class="menu-item" data-page="assign">👤 Assign Sales</button>
+    <button class="menu-item" data-page="sales">👥 Sales</button>
+  </nav>
+
+  <nav class="menu" id="menuSales" style="display:none">
+    <button class="menu-item active" data-page="dashboard">📊 Dashboard</button>
+    <button class="menu-item" data-page="cards">💳 Card Saya</button>
+  </nav>
+
+  <main class="content">
+    <div id="pageContent"></div>
+  </main>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>
