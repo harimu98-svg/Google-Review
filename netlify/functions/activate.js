@@ -26,34 +26,40 @@ export async function handler(event) {
     switch (action) {
       case 'activate-card':
         return json(200, await activateCard(body), headers);
-
       case 'login':
         return json(200, await login(body), headers);
-
       case 'cards-create':
         return json(200, await cardsCreate(body), headers);
-
       case 'cards-sell':
         return json(200, await cardsSell(body), headers);
-
       case 'cards-assign-sales':
         return json(200, await cardsAssignSales(body), headers);
-
+      case 'cards-assign-reseller':
+        return json(200, await cardsAssignReseller(body), headers);
       case 'cards-search':
         return json(200, await cardsSearch({ ...params, ...body }), headers);
-
       case 'dashboard-admin':
         return json(200, await dashboardAdmin(params), headers);
-
       case 'dashboard-sales':
         return json(200, await dashboardSales({ ...params, ...body }), headers);
-
+      case 'dashboard-reseller':
+        return json(200, await dashboardReseller({ ...params, ...body }), headers);
       case 'sales-list':
         return json(200, await salesList(), headers);
-
       case 'sales-manage':
         return json(200, await salesManage(body), headers);
-
+      case 'produk-list':
+        return json(200, await produkList(), headers);
+      case 'reseller-daftar':
+        return json(200, await resellerDaftar(body), headers);
+      case 'reseller-list':
+        return json(200, await resellerList({ ...params, ...body }), headers);
+      case 'reseller-manage':
+        return json(200, await resellerManage(body), headers);
+      case 'reseller-approve':
+        return json(200, await resellerApprove(body), headers);
+      case 'reseller-reject':
+        return json(200, await resellerReject(body), headers);
       default:
         return json(400, { error: 'Action tidak dikenali: ' + action }, headers);
     }
@@ -64,8 +70,7 @@ export async function handler(event) {
 }
 
 // ============================================
-// AKTIVASI CARD (user)
-// Komisi di-set di sini (dari sales.komisi_per_card)
+// AKTIVASI CARD
 // ============================================
 async function activateCard(body) {
   const { cardId, mode, placeId, placeName, placeAddress, reviewUrl, manualUrl } = body;
@@ -88,14 +93,12 @@ async function activateCard(body) {
     return { error: 'Mode tidak dikenali' };
   }
 
-  // Ambil data card untuk tahu sales_id
   const { data: card } = await supabase
     .from('cards')
     .select('sales_id')
     .eq('id', cardId)
     .single();
 
-  // Hitung komisi dari sales (kalau card di-assign ke sales)
   let komisi = 0;
   if (card?.sales_id) {
     const { data: sales } = await supabase
@@ -137,41 +140,50 @@ function validateReviewUrl(input) {
 async function login(body) {
   const { type, username, password } = body;
 
+  // Admin
   if (type === 'admin') {
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: username,
-      password
+      email: username, password
     });
-
     if (error) return { success: false, error: 'Email atau password salah' };
-
     return {
-      success: true,
-      role: 'admin',
+      success: true, role: 'admin',
       nama: data.user.email,
       access_token: data.session.access_token
     };
   }
 
+  // Sales
   if (type === 'sales') {
     const { data, error } = await supabase
       .from('sales')
       .select('id, nama, username, password_hash, area, aktif')
-      .eq('username', username)
-      .eq('aktif', true)
-      .single();
-
+      .eq('username', username).eq('aktif', true).single();
     if (error || !data) return { success: false, error: 'Username tidak ditemukan' };
-
     const isValid = await bcrypt.compare(password, data.password_hash);
     if (!isValid) return { success: false, error: 'Password salah' };
-
     return {
-      success: true,
-      role: 'sales',
-      sales_id: data.id,
-      nama: data.nama,
-      area: data.area
+      success: true, role: 'sales',
+      sales_id: data.id, nama: data.nama, area: data.area
+    };
+  }
+
+  // Reseller
+  if (type === 'reseller') {
+    const { data, error } = await supabase
+      .from('reseller')
+      .select('id, nama, username, password_hash, area, harga_khusus, status, aktif')
+      .eq('username', username)
+      .eq('status', 'approved')
+      .eq('aktif', true)
+      .single();
+    if (error || !data) return { success: false, error: 'Username tidak ditemukan atau belum di-approve' };
+    const isValid = await bcrypt.compare(password, data.password_hash);
+    if (!isValid) return { success: false, error: 'Password salah' };
+    return {
+      success: true, role: 'reseller',
+      reseller_id: data.id, nama: data.nama, area: data.area,
+      harga_khusus: data.harga_khusus
     };
   }
 
@@ -182,8 +194,9 @@ async function login(body) {
 // CARDS — CREATE DRAFT (BATCH)
 // ============================================
 async function cardsCreate(body) {
-  const { jumlah, mulai_dari } = body;
+  const { jumlah, mulai_dari, type } = body;
   if (!jumlah || jumlah < 1) return { error: 'Jumlah tidak valid' };
+  if (!type) return { error: 'Pilih type produk' };
 
   const { data: last } = await supabase
     .from('cards')
@@ -206,6 +219,7 @@ async function cardsCreate(body) {
     rows.push({
       id,
       card_id: `NFC-QR-2026-${kode}`,
+      type: type,
       status: 'draft',
       nfc_url: `https://greviewcard.netlify.app/n/${kode}`,
       qr_url: `https://greviewcard.netlify.app/q/${kode}`,
@@ -226,7 +240,6 @@ async function cardsCreate(body) {
 
 // ============================================
 // CARDS — SELL (admin jual langsung)
-// Harga jual di-set di sini. Komisi BELUM di-set.
 // ============================================
 async function cardsSell(body) {
   const { ids, harga_jual } = body;
@@ -238,8 +251,6 @@ async function cardsSell(body) {
     status: 'sold',
     sold_at: new Date().toISOString(),
     harga_jual: parseInt(harga_jual) || 0
-    // sales_id tetap null
-    // komisi TIDAK di-set (nanti saat activated)
   };
 
   const { error, count } = await supabase
@@ -254,7 +265,6 @@ async function cardsSell(body) {
 
 // ============================================
 // CARDS — ASSIGN SALES
-// Harga jual di-set di sini. Komisi BELUM di-set.
 // ============================================
 async function cardsAssignSales(body) {
   const { ids, sales_id, harga_jual } = body;
@@ -268,7 +278,33 @@ async function cardsAssignSales(body) {
     status: 'assigned',
     sold_at: new Date().toISOString(),
     harga_jual: parseInt(harga_jual) || 0
-    // komisi TIDAK di-set di sini
+  };
+
+  const { error, count } = await supabase
+    .from('cards')
+    .update(update)
+    .in('id', numericIds)
+    .in('status', ['draft', 'printed', 'assigned']);
+
+  if (error) return { error: error.message };
+  return { success: true, updated: count || numericIds.length };
+}
+
+// ============================================
+// CARDS — ASSIGN RESELLER
+// ============================================
+async function cardsAssignReseller(body) {
+  const { ids, reseller_id, harga_jual } = body;
+  if (!ids || !ids.length) return { error: 'Pilih card' };
+  if (!reseller_id) return { error: 'Pilih reseller' };
+
+  const numericIds = ids.map(code => codeToNumericId(code));
+
+  const update = {
+    reseller_id: reseller_id,
+    status: 'assigned',
+    sold_at: new Date().toISOString(),
+    harga_jual: parseInt(harga_jual) || 0
   };
 
   const { error, count } = await supabase
@@ -295,15 +331,16 @@ function codeToNumericId(code) {
 // CARDS — SEARCH
 // ============================================
 async function cardsSearch(opts) {
-  const { q, status, sales_id, dari, sampai, limit = 100, offset = 0 } = opts;
+  const { q, status, sales_id, reseller_id, dari, sampai, limit = 100, offset = 0 } = opts;
 
   let query = supabase
     .from('cards')
-    .select('id, card_id, status, active, place_name, sales_id, sold_at, harga_jual, komisi', { count: 'exact' });
+    .select('id, card_id, type, status, active, place_name, sales_id, reseller_id, sold_at, harga_jual, komisi', { count: 'exact' });
 
   if (q) query = query.or(`id.ilike.%${q}%,card_id.ilike.%${q}%,place_name.ilike.%${q}%`);
   if (status) query = query.eq('status', status);
   if (sales_id) query = query.eq('sales_id', sales_id);
+  if (reseller_id) query = query.eq('reseller_id', reseller_id);
   if (dari) query = query.gte('sold_at', dari);
   if (sampai) query = query.lte('sold_at', sampai);
 
@@ -316,12 +353,10 @@ async function cardsSearch(opts) {
 
 // ============================================
 // DASHBOARD — ADMIN
-// Komisi & penjualan dihitung dari status 'activated'
 // ============================================
 async function dashboardAdmin(params) {
   const { dari, sampai } = params;
 
-  // Stats per status
   const { data: statusCount } = await supabase.from('cards').select('status');
   const stats = { total: 0, draft: 0, printed: 0, sold: 0, assigned: 0, activated: 0, disabled: 0 };
   (statusCount || []).forEach(c => {
@@ -329,7 +364,6 @@ async function dashboardAdmin(params) {
     stats[c.status] = (stats[c.status] || 0) + 1;
   });
 
-  // Komisi & penjualan: HANYA dari status 'activated'
   let komisiQuery = supabase
     .from('cards')
     .select('sales_id, harga_jual, komisi, activated_at')
@@ -359,7 +393,6 @@ async function dashboardAdmin(params) {
   stats.total_penjualan = totalPenjualan;
   stats.total_komisi = totalKomisi;
 
-  // Ambil nama sales
   const salesIds = Object.keys(perSales);
   let salesNames = {};
   if (salesIds.length) {
@@ -383,7 +416,6 @@ async function dashboardAdmin(params) {
 
 // ============================================
 // DASHBOARD — SALES
-// Komisi dihitung dari status 'activated'
 // ============================================
 async function dashboardSales(opts) {
   const { dari, sampai, sales_id } = opts;
@@ -408,6 +440,35 @@ async function dashboardSales(opts) {
   return {
     success: true,
     stats: { total_card, total_activated, total_penjualan, total_komisi },
+    data
+  };
+}
+
+// ============================================
+// DASHBOARD — RESELLER
+// ============================================
+async function dashboardReseller(opts) {
+  const { dari, sampai, reseller_id } = opts;
+  if (!reseller_id) return { error: 'reseller_id diperlukan' };
+
+  let query = supabase
+    .from('cards')
+    .select('id, card_id, status, place_name, sold_at, activated_at, harga_jual')
+    .eq('reseller_id', reseller_id);
+  if (dari) query = query.gte('sold_at', dari);
+  if (sampai) query = query.lte('sold_at', sampai);
+
+  const { data, error } = await query;
+  if (error) return { error: error.message };
+
+  const activated = data.filter(c => c.status === 'activated');
+  const total_card = data.length;
+  const total_activated = activated.length;
+  const total_penjualan = activated.reduce((s, c) => s + (c.harga_jual || 0), 0);
+
+  return {
+    success: true,
+    stats: { total_card, total_activated, total_penjualan },
     data
   };
 }
@@ -453,7 +514,167 @@ async function salesManage(body) {
     return { success: true };
   }
 
-  return { error: 'Action tidak valid' };
+  return { error: 'Subaction tidak valid' };
+}
+
+// ============================================
+// PRODUK
+// ============================================
+async function produkList() {
+  const { data, error } = await supabase
+    .from('produk_card')
+    .select('id, nama, deskripsi, harga, gambar, urutan')
+    .eq('aktif', true)
+    .order('urutan');
+  if (error) return { error: error.message };
+  return { success: true, data };
+}
+
+// ============================================
+// RESELLER — DAFTAR (publik)
+// ============================================
+async function resellerDaftar(body) {
+  const { nama, no_hp, email, alamat, area } = body;
+  if (!nama || !no_hp) return { error: 'Nama dan No HP wajib diisi' };
+
+  const { data: existing } = await supabase
+    .from('reseller')
+    .select('id')
+    .eq('no_hp', no_hp)
+    .eq('status', 'pending')
+    .single();
+
+  if (existing) return { error: 'No HP sudah terdaftar. Tunggu konfirmasi admin.' };
+
+  const { error } = await supabase.from('reseller').insert([{
+    nama, no_hp, email, alamat, area, status: 'pending'
+  }]);
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
+// ============================================
+// RESELLER — LIST
+// ============================================
+async function resellerList(opts = {}) {
+  const { status } = opts;
+
+  let query = supabase
+    .from('reseller')
+    .select('id, nama, username, email, no_hp, alamat, area, harga_khusus, target_bulanan, status, catatan, aktif, created_at, approved_at')
+    .order('created_at', { ascending: false });
+
+  if (status) query = query.eq('status', status);
+
+  const { data, error } = await query;
+  if (error) return { error: error.message };
+  return { success: true, data };
+}
+
+// ============================================
+// RESELLER — MANAGE
+// ============================================
+async function resellerManage(body) {
+  const { subaction, id, data } = body;
+
+  if (subaction === 'create') {
+    if (data.password) {
+      data.password_hash = await bcrypt.hash(data.password, 10);
+      delete data.password;
+    }
+    data.status = 'approved';
+    data.approved_at = new Date().toISOString();
+
+    const { error } = await supabase.from('reseller').insert([data]);
+    if (error) return { error: error.message };
+    return { success: true };
+  }
+
+  if (subaction === 'update') {
+    if (data.password) {
+      data.password_hash = await bcrypt.hash(data.password, 10);
+      delete data.password;
+    }
+    const { error } = await supabase.from('reseller').update(data).eq('id', id);
+    if (error) return { error: error.message };
+    return { success: true };
+  }
+
+  if (subaction === 'delete') {
+    const { error } = await supabase.from('reseller').delete().eq('id', id);
+    if (error) return { error: error.message };
+    return { success: true };
+  }
+
+  return { error: 'Subaction tidak valid' };
+}
+
+// ============================================
+// RESELLER — APPROVE & REJECT
+// ============================================
+async function resellerApprove(body) {
+  const { reseller_id } = body;
+  if (!reseller_id) return { error: 'ID reseller tidak ada' };
+
+  const { data: reseller, error: err1 } = await supabase
+    .from('reseller')
+    .select('*')
+    .eq('id', reseller_id)
+    .single();
+  if (err1 || !reseller) return { error: 'Reseller tidak ditemukan' };
+  if (reseller.status !== 'pending') return { error: 'Reseller sudah diproses' };
+
+  // Generate username & password
+  const baseUsername = 'rs' + (reseller.no_hp || '').slice(-6);
+  let username = baseUsername;
+
+  // Cek username unik
+  const { data: existing } = await supabase
+    .from('reseller')
+    .select('id')
+    .eq('username', username)
+    .single();
+
+  if (existing) {
+    username = baseUsername + Math.floor(Math.random() * 1000);
+  }
+
+  const password = 'digicard' + Math.floor(1000 + Math.random() * 9000);
+  const password_hash = await bcrypt.hash(password, 10);
+
+  const { error: err2 } = await supabase
+    .from('reseller')
+    .update({
+      username,
+      password_hash,
+      status: 'approved',
+      aktif: true,
+      approved_at: new Date().toISOString()
+    })
+    .eq('id', reseller_id);
+
+  if (err2) return { error: err2.message };
+
+  return {
+    success: true,
+    username,
+    password,
+    reseller_id
+  };
+}
+
+async function resellerReject(body) {
+  const { reseller_id, catatan } = body;
+  if (!reseller_id) return { error: 'ID reseller tidak ada' };
+
+  const { error } = await supabase
+    .from('reseller')
+    .update({ status: 'rejected', catatan: catatan || '' })
+    .eq('id', reseller_id)
+    .eq('status', 'pending');
+
+  if (error) return { error: error.message };
+  return { success: true };
 }
 
 // ============================================
