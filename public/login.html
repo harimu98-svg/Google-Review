@@ -4,12 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login — DIGI CARD</title>
+  <link rel="icon" type="image/jpeg" href="/Assets/logo.jpg">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body class="login-page">
 
 <div class="login-box">
   <div class="login-header">
+    <img src="/Assets/logo2.jpg" alt="DIGI CARD" class="login-logo">
     <h1>DIGI CARD</h1>
     <p>Google Review NFC & QR Card</p>
   </div>
@@ -17,6 +19,7 @@
   <div class="tabs">
     <button class="tab active" data-type="admin">Admin</button>
     <button class="tab" data-type="sales">Sales</button>
+    <button class="tab" data-type="reseller">Reseller</button>
   </div>
 
   <form id="loginForm">
@@ -31,21 +34,34 @@
     <button type="submit" class="btn btn-primary btn-block">Masuk</button>
     <div id="errorMsg" class="error-msg"></div>
   </form>
+
+  <div style="text-align:center;margin-top:20px">
+    <a href="/" style="color:#5F6368;font-size:14px">← Kembali ke Beranda</a>
+  </div>
 </div>
 
 <script>
-// Kalau sudah login, redirect ke dashboard
+// Cek session
 const existing = localStorage.getItem('digicard_session');
 if (existing) {
   try {
     const s = JSON.parse(existing);
-    if (s && s.success) location.href = '/';
+    if (s && s.success) location.href = '/dashboard';
   } catch (e) {}
 }
 
-let loginType = 'admin';
+// Ambil role dari URL
+const urlParams = new URLSearchParams(location.search);
+const initialRole = urlParams.get('role') || 'admin';
 
+let loginType = initialRole;
+
+// Set tab aktif
 document.querySelectorAll('.tab').forEach(tab => {
+  if (tab.dataset.type === initialRole) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+  }
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
@@ -54,6 +70,10 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.getElementById('username').type = loginType === 'admin' ? 'email' : 'text';
   });
 });
+
+// Set label awal
+document.getElementById('labelUser').textContent = loginType === 'admin' ? 'Email' : 'Username';
+document.getElementById('username').type = loginType === 'admin' ? 'email' : 'text';
 
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -82,7 +102,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     }
 
     localStorage.setItem('digicard_session', JSON.stringify(data));
-    location.href = '/';
+    location.href = '/dashboard';
   } catch (e) {
     err.textContent = 'Terjadi kesalahan: ' + e.message;
   } finally {
