@@ -20,7 +20,7 @@
   <div class="user-info">
     <span id="userName">-</span>
     <span id="userRole" class="user-role">-</span>
-    <button id="logoutBtn" class="btn btn-outline btn-sm">Keluar</button>
+    <button id="logoutBtn" class="btn btn-outline-white btn-sm">Keluar</button>
   </div>
 </header>
 
@@ -31,10 +31,18 @@
     <button class="menu-item" data-page="create">➕ Buat Card</button>
     <button class="menu-item" data-page="sell">💰 Jual Card</button>
     <button class="menu-item" data-page="assign">👤 Assign Sales</button>
+    <button class="menu-item" data-page="assign-reseller">🏪 Assign Reseller</button>
     <button class="menu-item" data-page="sales">👥 Sales</button>
+    <button class="menu-item" data-page="reseller">🏬 Reseller</button>
+    <button class="menu-item" data-page="pendaftar">📝 Pendaftar</button>
   </nav>
 
   <nav class="menu" id="menuSales" style="display:none">
+    <button class="menu-item active" data-page="dashboard">📊 Dashboard</button>
+    <button class="menu-item" data-page="cards">💳 Card Saya</button>
+  </nav>
+
+  <nav class="menu" id="menuReseller" style="display:none">
     <button class="menu-item active" data-page="dashboard">📊 Dashboard</button>
     <button class="menu-item" data-page="cards">💳 Card Saya</button>
   </nav>
