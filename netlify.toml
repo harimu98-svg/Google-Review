@@ -9,10 +9,24 @@
 # REDIRECT RULES
 # ============================================
 
-# Halaman login (URL cantik)
+# Landing page (publik) — default
+[[redirects]]
+  from = "/"
+  to = "/index.html"
+  status = 200
+  force = true
+
+# Halaman login
 [[redirects]]
   from = "/login"
   to = "/login.html"
+  status = 200
+  force = true
+
+# Dashboard (setelah login)
+[[redirects]]
+  from = "/dashboard"
+  to = "/dashboard.html"
   status = 200
   force = true
 
