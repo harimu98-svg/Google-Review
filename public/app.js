@@ -195,15 +195,18 @@ async function renderCards(el) {
   if (session.role === 'sales') params.sales_id = session.sales_id;
   if (session.role === 'reseller') params.reseller_id = session.reseller_id;
 
-  const salesData = session.role === 'admin' ? await api('sales-list') : { data: [] };
+  // Fetch PARALEL, bukan berurutan
+  const [salesData, resellerData, data] = await Promise.all([
+    session.role === 'admin' ? api('sales-list') : Promise.resolve({ data: [] }),
+    session.role === 'admin' ? api('reseller-list', {}, { status: 'approved' }) : Promise.resolve({ data: [] }),
+    api('cards-search', params)
+  ]);
+
   const salesMap = {};
   (salesData.data || []).forEach(s => { salesMap[s.id] = s.nama; });
 
-  const resellerData = session.role === 'admin' ? await api('reseller-list', {}, { status: 'approved' }) : { data: [] };
   const resellerMap = {};
   (resellerData.data || []).forEach(r => { resellerMap[r.id] = r.nama; });
-
-  const data = await api('cards-search', params);
 
   el.innerHTML = `
     <h2>${session.role === 'admin' ? 'Semua Card' : 'Card Saya'}</h2>
