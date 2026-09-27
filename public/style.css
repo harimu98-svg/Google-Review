@@ -492,16 +492,32 @@ a:hover { text-decoration: underline; }
 .topbar .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+}
+
+.topbar h1 {
+  font-size: 18px;
+  color: white;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.topbar .brand span {
+  font-size: 11px;
+  opacity: .85;
+  color: white;
+  display: block;
+  margin-top: 2px;
 }
 
 .topbar-logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
+  width: 56px;         /* dari 40px jadi 56px */
+  height: 56px;
+  border-radius: 12px;
   object-fit: cover;
   background: white;
-  padding: 2px;
+  padding: 3px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
 }
 
 .topbar h1 { font-size: 16px; color: white; line-height: 1.2; }
@@ -510,16 +526,38 @@ a:hover { text-decoration: underline; }
 .user-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   font-size: 14px;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;   /* rata kanan */
+  gap: 2px;
+  line-height: 1.2;
 }
 
 .user-role {
   background: rgba(255,255,255,.2);
   padding: 3px 10px;
   border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+.user-name {
+  font-size: 13px;
+  color: rgba(255,255,255,.95);
+  font-weight: 500;
+  text-align: right;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .container {
@@ -818,9 +856,14 @@ a:hover { text-decoration: underline; }
   .topbar h1 { font-size: 14px; }
 
   .topbar-logo {
-    width: 32px;
-    height: 32px;
-  }
+  width: 56px;         /* dari 40px jadi 56px */
+  height: 56px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: white;
+  padding: 3px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
 
   .user-info {
     font-size: 12px;
