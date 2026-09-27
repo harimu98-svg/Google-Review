@@ -60,6 +60,10 @@ export async function handler(event) {
         return json(200, await resellerApprove(body), headers);
       case 'reseller-reject':
         return json(200, await resellerReject(body), headers);
+        case 'cards-disable':
+        return json(200, await cardsDisable(body), headers);
+      case 'cards-reset':
+      return json(200, await cardsReset(body), headers);
       default:
         return json(400, { error: 'Action tidak dikenali: ' + action }, headers);
     }
@@ -677,7 +681,65 @@ async function resellerReject(body) {
   if (error) return { error: error.message };
   return { success: true };
 }
+// ============================================
+// CARDS — DISABLE
+// ============================================
+async function cardsDisable(body) {
+  const { ids } = body;
+  if (!ids || !ids.length) return { error: 'Pilih card' };
 
+  const numericIds = ids.map(code => codeToNumericId(code));
+
+  const { error, count } = await supabase
+    .from('cards')
+    .update({
+      status: 'disabled',
+      active: false
+    })
+    .in('id', numericIds)
+    .neq('status', 'disabled');   // skip yang sudah disabled
+
+  if (error) return { error: error.message };
+  return { success: true, updated: count || numericIds.length };
+}
+
+// ============================================
+// CARDS — RESET
+// Kembalikan ke status 'printed', hapus data aktivasi
+// ============================================
+async function cardsReset(body) {
+  const { ids } = body;
+  if (!ids || !ids.length) return { error: 'Pilih card' };
+
+  const numericIds = ids.map(code => codeToNumericId(code));
+
+  const { error, count } = await supabase
+    .from('cards')
+    .update({
+      status: 'printed',
+      active: false,
+      // Hapus data aktivasi
+      google_url: null,
+      place_id: null,
+      place_name: null,
+      place_address: null,
+      source: null,
+      activated_at: null,
+      // Hapus data penjualan
+      sales_id: null,
+      reseller_id: null,
+      sold_at: null,
+      harga_jual: 0,
+      komisi: 0,
+      // Reset counter
+      nfc_taps: 0,
+      qr_scans: 0
+    })
+    .in('id', numericIds);
+
+  if (error) return { error: error.message };
+  return { success: true, updated: count || numericIds.length };
+}
 // ============================================
 // HELPER
 // ============================================
