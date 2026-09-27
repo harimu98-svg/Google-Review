@@ -330,7 +330,7 @@ function codeToNumericId(code) {
 // CARDS — SEARCH
 // ============================================
 async function cardsSearch(opts) {
-  const { q, status, sales_id, reseller_id, dari, sampai, limit = 100, offset = 0 } = opts;
+  const { q, status, sales_id, reseller_id, dari, sampai, limit = 1000, offset = 0 } = opts;
 
   let query = supabase
     .from('cards')
