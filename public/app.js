@@ -106,6 +106,8 @@ function renderPage(page) {
     case 'sell': return renderSell(el);
     case 'assign': return renderAssignSales(el);
     case 'assign-reseller': return renderAssignReseller(el);
+    case 'disable': return renderDisable(el);       // ← BARU
+    case 'reset': return renderReset(el);            // ← BARU
     case 'sales': return renderSales(el);
     case 'reseller': return renderReseller(el);
     case 'pendaftar': return renderPendaftar(el);
@@ -188,7 +190,89 @@ function renderSalesReport(rows) {
     </div>
   `;
 }
+// ===== DISABLE CARD =====
+async function renderDisable(el) {
+  el.innerHTML = `
+    <h2>Disable Card</h2>
+    <p style="color:#5F6368;font-size:14px;margin-bottom:16px">
+      Card yang di-disable <strong>tidak bisa</strong> di-tap/scan untuk review.
+      Status akan berubah menjadi <strong>disabled</strong>.
+    </p>
 
+    <div class="form-group">
+      <label>Card ID — satuan atau range</label>
+      <input type="text" id="cardIds" placeholder="Contoh: B001 atau B001-B010 atau B001, B002">
+      <small style="color:#888;font-size:12px;display:block;margin-top:4px">
+        Format: <code>B001</code> (satuan), <code>B001-B010</code> (range), <code>B001,B002</code> (multiple)
+      </small>
+    </div>
+
+    <button class="btn btn-danger" id="disableBtn">🚫 Disable Card</button>
+    <div id="disableResult"></div>
+  `;
+
+  document.getElementById('disableBtn').addEventListener('click', async () => {
+    const input = document.getElementById('cardIds').value.trim();
+    if (!input) { alert('Masukkan Card ID'); return; }
+
+    const ids = parseCardIds(input);
+    if (!ids.length) { alert('Format Card ID tidak valid'); return; }
+
+    if (!confirm(`Disable ${ids.length} card? Card tidak akan bisa di-tap/scan.`)) return;
+
+    const btn = document.getElementById('disableBtn');
+    btn.disabled = true; btn.textContent = 'Memproses...';
+
+    const data = await api('cards-disable', { ids });
+
+    document.getElementById('disableResult').innerHTML = data.success
+      ? `<div class="success">✅ ${data.updated} card di-disable</div>`
+      : `<div class="error">❌ ${data.error}</div>`;
+
+    btn.disabled = false; btn.textContent = '🚫 Disable Card';
+  });
+}
+
+// ===== RESET CARD =====
+async function renderReset(el) {
+  el.innerHTML = `
+    <h2>Reset Card</h2>
+    <p style="color:#5F6368;font-size:14px;margin-bottom:16px">
+      Reset card akan mengembalikan status ke <strong>printed</strong> dan 
+      <strong>menghapus semua data aktivasi</strong> (URL review, nama usaha, sales, dll).
+      Gunakan kalau ada salah aktivasi.
+    </p>
+
+    <div class="form-group">
+      <label>Card ID — satuan atau range</label>
+      <input type="text" id="cardIds" placeholder="Contoh: B001 atau B001-B010">
+    </div>
+
+    <button class="btn btn-danger" id="resetBtn">🔄 Reset Card</button>
+    <div id="resetResult"></div>
+  `;
+
+  document.getElementById('resetBtn').addEventListener('click', async () => {
+    const input = document.getElementById('cardIds').value.trim();
+    if (!input) { alert('Masukkan Card ID'); return; }
+
+    const ids = parseCardIds(input);
+    if (!ids.length) { alert('Format Card ID tidak valid'); return; }
+
+    if (!confirm(`Reset ${ids.length} card? Semua data aktivasi akan dihapus.`)) return;
+
+    const btn = document.getElementById('resetBtn');
+    btn.disabled = true; btn.textContent = 'Memproses...';
+
+    const data = await api('cards-reset', { ids });
+
+    document.getElementById('resetResult').innerHTML = data.success
+      ? `<div class="success">✅ ${data.updated} card di-reset ke status printed</div>`
+      : `<div class="error">❌ ${data.error}</div>`;
+
+    btn.disabled = false; btn.textContent = '🔄 Reset Card';
+  });
+}
 // ===== CARDS =====
 async function renderCards(el) {
   let params = {};
