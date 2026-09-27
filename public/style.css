@@ -33,9 +33,9 @@ a:hover { text-decoration: underline; }
 .landing-page { background: var(--white); }
 
 .landing-topbar {
-  background: #FF6D00;   /* Orange khas Google */
+  background: linear-gradient(90deg, #0F9D58 0%, #1E8E3E 100%);
   color: white;
-  padding: 16px 0;       /* lebih tinggi karena logo besar */
+  padding: 16px 0;
   position: sticky;
   top: 0;
   z-index: 100;
