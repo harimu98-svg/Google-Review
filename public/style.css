@@ -33,13 +33,13 @@ a:hover { text-decoration: underline; }
 .landing-page { background: var(--white); }
 
 .landing-topbar {
-  background: var(--gm-blue-dark);
+  background: #FF6D00;   /* Orange khas Google */
   color: white;
-  padding: 12px 0;
+  padding: 16px 0;       /* lebih tinggi karena logo besar */
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 2px 8px rgba(0,0,0,.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
 }
 
 .landing-container {
@@ -58,21 +58,39 @@ a:hover { text-decoration: underline; }
 .landing-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   color: white;
-  font-weight: 700;
-  font-size: 18px;
   text-decoration: none;
 }
 .landing-brand:hover { text-decoration: none; }
 
+.landing-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.landing-brand-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+}
+
+.landing-brand-sub {
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(255,255,255,.9);
+  margin-top: 2px;
+}
+
 .landing-logo {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 56px;         /* dari 36px jadi 56px */
+  height: 56px;
+  border-radius: 10px;
   object-fit: cover;
   background: white;
-  padding: 2px;
+  padding: 3px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
 }
 
 .landing-nav {
@@ -93,13 +111,19 @@ a:hover { text-decoration: underline; }
 
 .btn-login {
   background: white;
-  color: var(--gm-blue-dark);
+  color: #FF6D00;      /* teks orange */
   border: none;
-  padding: 8px 16px;
+  padding: 10px 20px;
   border-radius: 6px;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 14px;
   cursor: pointer;
+  transition: all .15s;
+}
+
+.btn-login:hover {
+  background: #FFF3E0;
+  transform: translateY(-1px);
 }
 
 .login-menu {
@@ -660,12 +684,37 @@ a:hover { text-decoration: underline; }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
+  /* ===== HERO ===== */
   .hero h1 { font-size: 28px; }
   .hero-sub { font-size: 15px; }
   .hero { padding: 48px 0; }
   .section { padding: 40px 0; }
   .section h2 { font-size: 24px; }
 
+  /* ===== TOP BAR (LANDING) ===== */
+  .landing-topbar {
+    padding: 10px 0;
+  }
+
+  .landing-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+  }
+
+  .landing-brand {
+    gap: 10px;
+  }
+
+  .landing-brand-title {
+    font-size: 15px;
+  }
+
+  .landing-brand-sub {
+    font-size: 9px;
+  }
+
+  /* ===== HAMBURGER & NAV ===== */
   .hamburger { display: block; }
 
   .landing-nav {
@@ -674,7 +723,7 @@ a:hover { text-decoration: underline; }
     top: 100%;
     left: 0;
     right: 0;
-    background: var(--gm-blue-dark);
+    background: #FF6D00;     /* orange, sama dengan top bar */
     flex-direction: column;
     align-items: stretch;
     gap: 0;
@@ -690,17 +739,66 @@ a:hover { text-decoration: underline; }
     border-radius: 0;
     text-align: left;
     width: 100%;
+    color: white;
+    background: transparent;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
   }
 
-  .login-dropdown { width: 100%; }
-  .login-menu { position: static; box-shadow: none; background: rgba(255,255,255,.1); margin: 0; }
-  .login-menu a { color: white; }
-  .login-menu a:hover { background: rgba(255,255,255,.1); }
+  .landing-nav a:hover,
+  .landing-nav .btn-login:hover {
+    background: rgba(255,255,255,.15);
+  }
 
+  /* ===== LOGIN DROPDOWN (MOBILE) ===== */
+  .login-dropdown { width: 100%; }
+
+  .login-menu {
+    position: static;
+    box-shadow: none;
+    background: rgba(255,255,255,.1);
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .login-menu a {
+    color: white;
+    padding: 12px 20px;
+  }
+
+  .login-menu a:hover {
+    background: rgba(255,255,255,.15);
+  }
+
+  /* ===== HERO BUTTONS ===== */
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0 20px;
+  }
+
+  .btn-hero-primary,
+  .btn-hero-outline {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+
+  /* ===== FORM ROW ===== */
   .form-row { grid-template-columns: 1fr; }
 
+  /* ===== DASHBOARD ===== */
   .container { flex-direction: column; padding: 12px; }
-  .menu { width: 100%; flex-direction: row; overflow-x: auto; padding-bottom: 4px; }
+
+  .menu {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .menu-item {
     white-space: nowrap;
     padding: 10px 14px;
@@ -708,20 +806,109 @@ a:hover { text-decoration: underline; }
     border-left: none;
     border-bottom: 3px solid transparent;
   }
-  .menu-item.active { border-left: none; border-bottom-color: var(--gm-blue-darker); }
 
+  .menu-item.active {
+    border-left: none;
+    border-bottom-color: var(--gm-blue-darker);
+  }
+
+  /* ===== TOP BAR (DASHBOARD) ===== */
   .topbar { padding: 10px 16px; }
+
   .topbar h1 { font-size: 14px; }
-  .topbar-logo { width: 32px; height: 32px; }
-  .user-info { font-size: 12px; gap: 8px; }
-  .user-role { font-size: 10px; padding: 2px 8px; }
 
-  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .topbar-logo {
+    width: 32px;
+    height: 32px;
+  }
+
+  .user-info {
+    font-size: 12px;
+    gap: 8px;
+  }
+
+  .user-role {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+
+  /* ===== STATS ===== */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
   .stat-value { font-size: 18px; }
+  .stat-label { font-size: 10px; }
 
+  /* ===== TABLE ===== */
   .table { font-size: 12px; }
   .table th, .table td { padding: 8px 10px; }
 
+  /* ===== CONTENT ===== */
   .content h2 { font-size: 18px; }
+  .content h3 { font-size: 14px; }
+
+  /* ===== FORM ACTIONS ===== */
   .form-actions { flex-direction: column; }
+  .form-actions .btn { width: 100%; }
+
+  /* ===== FORM CARD ===== */
+  .form-card { padding: 16px; }
+
+  /* ===== RESELLER FORM ===== */
+  .reseller-form { padding: 20px; }
+
+  /* ===== STAT CARD ===== */
+  .stat-card { padding: 14px; }
+
+  /* ===== LOGIN ===== */
+  .login-box { padding: 28px 20px; }
+  .login-logo { width: 60px; height: 60px; }
+  .login-header h1 { font-size: 20px; }
+
+  .tabs { gap: 2px; }
+  .tab { font-size: 12px; padding: 8px 6px; }
+}
+/* ===== HERO BUTTONS (ORANGE) ===== */
+.btn-hero-primary {
+  background: #FF6D00;
+  color: white;
+  padding: 14px 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  border: 2px solid #FF6D00;
+  transition: all .15s;
+  display: inline-block;
+  text-decoration: none;
+}
+
+.btn-hero-primary:hover {
+  background: #E65100;
+  border-color: #E65100;
+  text-decoration: none;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,.2);
+}
+
+.btn-hero-outline {
+  background: transparent;
+  color: white;
+  padding: 14px 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  border: 2px solid white;
+  transition: all .15s;
+  display: inline-block;
+  text-decoration: none;
+}
+
+.btn-hero-outline:hover {
+  background: white;
+  color: #FF6D00;
+  text-decoration: none;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,.2);
 }
