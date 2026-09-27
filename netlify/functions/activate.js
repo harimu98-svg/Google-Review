@@ -333,8 +333,8 @@ async function cardsSearch(opts) {
   const { q, status, sales_id, reseller_id, dari, sampai, limit = 1000, offset = 0 } = opts;
 
   let query = supabase
-    .from('cards')
-    .select('id, card_id, type, status, active, place_name, sales_id, reseller_id, sold_at, harga_jual, komisi', { count: 'exact' });
+  .from('cards')
+  .select('id, card_id, type, status, active, place_name, sales_id, reseller_id, sold_at, harga_jual, komisi');
 
   if (q) query = query.or(`id.ilike.%${q}%,card_id.ilike.%${q}%,place_name.ilike.%${q}%`);
   if (status) query = query.eq('status', status);
