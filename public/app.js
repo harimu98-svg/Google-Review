@@ -220,21 +220,48 @@ async function renderCards(el) {
   renderCardsTable(data.data || [], salesMap, resellerMap);
 }
 
-function renderCardsTable(rows, salesMap = {}, resellerMap = {}) {
+// ===== STATE PAGINASI =====
+let currentPage = 1;
+const PER_PAGE = 20;
+let allCardsData = [];
+let salesMapGlobal = {};
+let resellerMapGlobal = {};
+
+function renderCardsTable(rows, salesMap = {}, resellerMap = {}, page = 1) {
+  allCardsData = rows;
+  salesMapGlobal = salesMap;
+  resellerMapGlobal = resellerMap;
+  currentPage = page;
+
   const el = document.getElementById('cardsTable');
-  if (!rows.length) { el.innerHTML = '<div class="empty">Tidak ada data</div>'; return; }
+  if (!rows.length) {
+    el.innerHTML = '<div class="empty">Tidak ada data</div>';
+    return;
+  }
+
+  const totalPages = Math.ceil(rows.length / PER_PAGE);
+  const start = (page - 1) * PER_PAGE;
+  const end = start + PER_PAGE;
+  const pageRows = rows.slice(start, end);
+
   el.innerHTML = `
     <div class="table-wrapper">
       <div class="table-scroll">
         <table class="table">
           <thead>
             <tr>
-              <th>ID</th><th>Card ID</th><th>Type</th><th>Status</th>
-              <th>Usaha</th><th>Sales</th><th>Reseller</th><th>Harga</th>
+              <th>ID</th>
+              <th>Card ID</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Usaha</th>
+              <th>Sales</th>
+              <th>Reseller</th>
+              <th>Harga</th>
             </tr>
           </thead>
           <tbody>
-            ${rows.map(r => `
+            ${pageRows.map(r => `
               <tr>
                 <td>${r.id}</td>
                 <td>${r.card_id}</td>
@@ -249,10 +276,59 @@ function renderCardsTable(rows, salesMap = {}, resellerMap = {}) {
           </tbody>
         </table>
       </div>
+      ${renderPagination(rows.length, page, totalPages)}
     </div>
   `;
 }
 
+function renderPagination(total, currentPage, totalPages) {
+  if (totalPages <= 1) return '';
+
+  const start = (currentPage - 1) * PER_PAGE + 1;
+  const end = Math.min(currentPage * PER_PAGE, total);
+
+  let buttons = '';
+
+  // Prev
+  buttons += `<button onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
+
+  // Page numbers (max 5 tampil)
+  let startPage = Math.max(1, currentPage - 2);
+  let endPage = Math.min(totalPages, startPage + 4);
+  if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+  if (startPage > 1) {
+    buttons += `<button onclick="goToPage(1)">1</button>`;
+    if (startPage > 2) buttons += `<span class="pagination-ellipsis">...</span>`;
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    buttons += `<button onclick="goToPage(${i})" class="${i === currentPage ? 'active' : ''}">${i}</button>`;
+  }
+
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) buttons += `<span class="pagination-ellipsis">...</span>`;
+    buttons += `<button onclick="goToPage(${totalPages})">${totalPages}</button>`;
+  }
+
+  // Next
+  buttons += `<button onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>›</button>`;
+
+  return `
+    <div class="pagination">
+      <div class="pagination-info">Menampilkan ${start}-${end} dari ${total} card</div>
+      ${buttons}
+    </div>
+  `;
+}
+
+window.goToPage = function(page) {
+  if (page < 1) return;
+  const totalPages = Math.ceil(allCardsData.length / PER_PAGE);
+  if (page > totalPages) return;
+  renderCardsTable(allCardsData, salesMapGlobal, resellerMapGlobal, page);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 // ===== CREATE CARD =====
 async function renderCreate(el) {
   const produkData = await api('produk-list');
