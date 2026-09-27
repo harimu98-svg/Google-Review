@@ -20,23 +20,22 @@
       </div>
     </a>
 
-   <nav class="landing-nav" id="landingNav">
-  <a href="#tentang">Tentang</a>
-  <a href="#produk">Produk</a>
-  <a href="#harga">Harga</a>
-  <a href="#reseller">Reseller</a>
-  <a href="https://wa.me/6281234567890?text=Halo%20Admin%20DigiCard" target="_blank">Chat Admin</a>
-</nav>
+    <nav class="landing-nav" id="landingNav">
+      <a href="#tentang">Tentang</a>
+      <a href="#produk">Produk</a>
+      <a href="#harga">Harga</a>
+      <a href="#reseller">Reseller</a>
+      <a href="https://wa.me/6281234567890?text=Halo%20Admin%20DigiCard" target="_blank">Chat Admin</a>
+    </nav>
 
-<div class="login-dropdown">
-  <button class="btn-login" id="loginToggle">Login ▼</button>
-  <div class="login-menu" id="loginMenu">
-    <a href="/login?role=admin">Admin</a>
-    <a href="/login?role=sales">Sales</a>
-    <a href="/login?role=reseller">Reseller</a>
-  </div>
-</div>
-
+    <div class="login-dropdown">
+      <button class="btn-login" id="loginToggle">Login ▼</button>
+      <div class="login-menu" id="loginMenu">
+        <a href="/login?role=admin">Admin</a>
+        <a href="/login?role=sales">Sales</a>
+        <a href="/login?role=reseller">Reseller</a>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -49,9 +48,9 @@
       Cukup tap atau scan, review langsung terbuka.
     </p>
     <div class="hero-actions">
-  <a href="#reseller" class="btn btn-hero-primary btn-lg">Daftar Reseller</a>
-  <a href="https://wa.me/6281234567890?text=Halo%20Admin%20DigiCard" target="_blank" class="btn btn-hero-outline btn-lg">Chat Admin</a>
-</div>
+      <a href="#reseller" class="btn btn-hero-primary btn-lg">Daftar Reseller</a>
+      <a href="https://wa.me/6281234567890?text=Halo%20Admin%20DigiCard" target="_blank" class="btn btn-hero-outline btn-lg">Chat Admin</a>
+    </div>
 
     <div class="hero-video">
       <video autoplay muted loop playsinline>
@@ -175,20 +174,22 @@
 </footer>
 
 <script>
-// ===== HAMBURGER MENU =====
-document.getElementById('hamburger').addEventListener('click', () => {
-  document.getElementById('landingNav').classList.toggle('open');
-});
-
 // ===== LOGIN DROPDOWN =====
-document.getElementById('loginToggle').addEventListener('click', (e) => {
-  e.stopPropagation();
-  document.getElementById('loginMenu').classList.toggle('open');
-});
+const loginToggle = document.getElementById('loginToggle');
+const loginMenu = document.getElementById('loginMenu');
 
-document.addEventListener('click', () => {
-  document.getElementById('loginMenu')?.classList.remove('open');
-});
+if (loginToggle && loginMenu) {
+  loginToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    loginMenu.classList.toggle('open');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!loginMenu.contains(e.target) && e.target !== loginToggle) {
+      loginMenu.classList.remove('open');
+    }
+  });
+}
 
 // ===== LOAD PRODUK =====
 async function loadProduk() {
@@ -205,7 +206,6 @@ async function loadProduk() {
       return;
     }
 
-    // Render produk
     document.getElementById('produkGrid').innerHTML = data.data.map(p => `
       <div class="produk-card">
         <div class="produk-img">📇</div>
@@ -214,7 +214,6 @@ async function loadProduk() {
       </div>
     `).join('');
 
-    // Render harga
     document.getElementById('hargaGrid').innerHTML = data.data.map(p => `
       <div class="harga-card">
         <h3>${p.nama}</h3>
