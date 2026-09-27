@@ -97,8 +97,8 @@ a:hover { text-decoration: underline; }
   display: flex;
   align-items: center;
   gap: 24px;
+  flex: 1;
 }
-
 .landing-nav a {
   color: white;
   font-size: 14px;
@@ -779,63 +779,7 @@ a:hover { text-decoration: underline; }
   .landing-brand-sub {
     font-size: 9px;
   }
-
-  /* ===== HAMBURGER & NAV ===== */
-  .hamburger { display: block; }
-
-  .landing-nav {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: #FF6D00;     /* orange, sama dengan top bar */
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0;
-    padding: 8px 0;
-    box-shadow: 0 4px 12px rgba(0,0,0,.15);
-  }
-
-  .landing-nav.open { display: flex; }
-
-  .landing-nav a,
-  .landing-nav .btn-login {
-    padding: 12px 20px;
-    border-radius: 0;
-    text-align: left;
-    width: 100%;
-    color: white;
-    background: transparent;
-    border: none;
-    font-size: 14px;
-    font-weight: 500;
-  }
-
-  .landing-nav a:hover,
-  .landing-nav .btn-login:hover {
-    background: rgba(255,255,255,.15);
-  }
-
-  /* ===== LOGIN DROPDOWN (MOBILE) ===== */
-  .login-dropdown { width: 100%; }
-
-  .login-menu {
-    position: static;
-    box-shadow: none;
-    background: rgba(255,255,255,.1);
-    margin: 0;
-    border-radius: 0;
-  }
-
-  .login-menu a {
-    color: white;
-    padding: 12px 20px;
-  }
-
-  .login-menu a:hover {
-    background: rgba(255,255,255,.15);
-  }
+   
 
   /* ===== HERO BUTTONS ===== */
   .hero-actions {
