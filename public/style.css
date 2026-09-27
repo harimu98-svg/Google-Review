@@ -709,11 +709,31 @@ a:hover { text-decoration: underline; }
 .form-actions .btn { flex: 1; }
 
 /* ===== STATE ===== */
-.loading, .empty, .error, .success {
-  padding: 20px;
+.loading {
+  padding: 40px;
   text-align: center;
-  border-radius: 10px;
-  margin: 16px 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  background: white;
+  border-radius: 12px;
+  margin: 20px 0;
+}
+
+.loading::after {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--gm-blue);
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 .loading { color: var(--text-muted); }
 .empty   { color: var(--text-muted); background: white; }
