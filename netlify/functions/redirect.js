@@ -49,6 +49,39 @@ export async function handler(event) {
       .catch(err => console.error('Counter error:', err));
   }
 
+    // Card disabled → tampilkan error
+  if (data.status === 'disabled') {
+    return {
+      statusCode: 403,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      body: `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Card Dinonaktifkan</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      text-align: center;
+      padding: 60px 20px;
+      background: #F8F9FA;
+      color: #202124;
+    }
+    h1 { font-size: 28px; color: #EA4335; margin-bottom: 16px; }
+    p { color: #5F6368; line-height: 1.6; max-width: 400px; margin: 0 auto; }
+    .icon { font-size: 64px; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+  <div class="icon">🚫</div>
+  <h1>Card Dinonaktifkan</h1>
+  <p>Card ini sudah tidak aktif. Hubungi admin untuk informasi lebih lanjut.</p>
+</body>
+</html>`
+    };
+  }
+
   // Sudah aktif → redirect ke Google Review
   if (data.active && data.google_url) {
     return {
@@ -60,7 +93,7 @@ export async function handler(event) {
   // Belum aktif → ke halaman aktivasi
   return {
     statusCode: 302,
-    headers: { Location: `/activate?id=${numericId}` }
+    headers: { Location: `/activate?id=${id}` }
   };
 }
 
