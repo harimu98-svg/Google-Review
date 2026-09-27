@@ -137,7 +137,7 @@ a:hover { text-decoration: underline; }
 
 /* ===== HERO ===== */
 .hero {
-  background: linear-gradient(135deg, var(--gm-blue-dark) 0%, var(--gm-blue-darker) 100%);
+  background: linear-gradient(135deg, #34A853 0%, #1E8E3E 100%);
   color: white;
   padding: 80px 0;
   text-align: center;
