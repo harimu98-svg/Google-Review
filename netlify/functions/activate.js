@@ -220,7 +220,7 @@ async function cardsCreate(body) {
       id,
       card_id: `NFC-QR-2026-${kode}`,
       type: type,
-      status: 'draft',
+      status: 'printed',          // ← GANTI dari 'draft'
       nfc_url: `https://greviewcard.netlify.app/n/${kode}`,
       qr_url: `https://greviewcard.netlify.app/q/${kode}`,
       batch_id: `BATCH-${new Date().toISOString().slice(0, 7)}`
@@ -237,7 +237,6 @@ async function cardsCreate(body) {
     sampai: rows[rows.length - 1].id
   };
 }
-
 // ============================================
 // CARDS — SELL (admin jual langsung)
 // ============================================
@@ -257,7 +256,7 @@ async function cardsSell(body) {
     .from('cards')
     .update(update)
     .in('id', numericIds)
-    .in('status', ['draft', 'printed']);
+    .in('status', ['printed']);          // ← GANTI dari ['draft', 'printed']
 
   if (error) return { error: error.message };
   return { success: true, updated: count || numericIds.length };
@@ -284,7 +283,7 @@ async function cardsAssignSales(body) {
     .from('cards')
     .update(update)
     .in('id', numericIds)
-    .in('status', ['draft', 'printed', 'assigned']);
+    .in('status', ['printed', 'assigned']);
 
   if (error) return { error: error.message };
   return { success: true, updated: count || numericIds.length };
@@ -311,7 +310,7 @@ async function cardsAssignReseller(body) {
     .from('cards')
     .update(update)
     .in('id', numericIds)
-    .in('status', ['draft', 'printed', 'assigned']);
+    .in('status', ['printed', 'assigned']);
 
   if (error) return { error: error.message };
   return { success: true, updated: count || numericIds.length };
@@ -358,10 +357,12 @@ async function dashboardAdmin(params) {
   const { dari, sampai } = params;
 
   const { data: statusCount } = await supabase.from('cards').select('status');
-  const stats = { total: 0, draft: 0, printed: 0, sold: 0, assigned: 0, activated: 0, disabled: 0 };
+  const stats = { total: 0, printed: 0, sold: 0, assigned: 0, activated: 0, disabled: 0 };
   (statusCount || []).forEach(c => {
     stats.total++;
-    stats[c.status] = (stats[c.status] || 0) + 1;
+    if (c.status !== 'draft') {           // ← skip draft (kalau masih ada)
+      stats[c.status] = (stats[c.status] || 0) + 1;
+    }
   });
 
   let komisiQuery = supabase
