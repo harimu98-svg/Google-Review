@@ -6,9 +6,6 @@ const supabase = createClient(
 );
 
 export async function handler(event) {
-  // HANYA terima GET (redirect)
-  // POST akan di-handle oleh activate.js
-
   const params = event.queryStringParameters || {};
   const code = params.id || event.path.split('/').pop();
   const type = params.type || 'unknown';
@@ -27,9 +24,10 @@ export async function handler(event) {
     `);
   }
 
+  // ← PERBAIKAN: tambah 'status' di select
   const { data, error } = await supabase
     .from('cards')
-    .select('google_url, active')
+    .select('google_url, active, status')
     .eq('id', numericId)
     .single();
 
@@ -49,7 +47,7 @@ export async function handler(event) {
       .catch(err => console.error('Counter error:', err));
   }
 
-    // Card disabled → tampilkan error
+  // Card disabled → tampilkan error
   if (data.status === 'disabled') {
     return {
       statusCode: 403,
@@ -90,27 +88,23 @@ export async function handler(event) {
     };
   }
 
-  // Belum aktif → ke halaman aktivasi
+  // ← PERBAIKAN: pakai `code`, bukan `id`
   return {
     statusCode: 302,
-    headers: { Location: `/activate?id=${id}` }
+    headers: { Location: `/activate?id=${encodeURIComponent(code)}` }
   };
 }
 
 function codeToNumericId(code) {
-  const match = code.match(/^([A-Z])(\d{3})$/);
-  if (!match) return null;
-
-  const letter = match[1];
-  const number = parseInt(match[2], 10);
-  const batchIndex = letter.charCodeAt(0) - 64;
-
-  const numericId = (batchIndex - 1) * 999 + number;
-  if (numericId < 1) return null;
-
-  return numericId < 1000
-    ? String(numericId).padStart(3, '0')
-    : String(numericId);
+  const s = String(code).toUpperCase().trim();
+  const m = s.match(/^([A-Z])(\d{3})$/);
+  if (!m) return null;
+  const batch = m[1].charCodeAt(0) - 64;
+  const num = parseInt(m[2], 10);
+  const id = (batch - 1) * 999 + num;
+  return id < 1000
+    ? String(id).padStart(3, '0')
+    : String(id);
 }
 
 function html(status, body) {
