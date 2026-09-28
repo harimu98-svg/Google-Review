@@ -763,59 +763,48 @@ a:hover { text-decoration: underline; }
   border-top: 1px solid var(--border);
 }
 /* ===== HERO BUTTONS (ORANGE) ===== */
-.btn-hero-primary,
-.btn-hero-outline {
-  padding: 14px 32px;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 700;
-  border: 2px solid #FF6D00;
-  transition: all .15s;
-  display: inline-block;
-  text-decoration: none;
-  cursor: pointer;
-  text-align: center;
-}
-
-.btn-hero-primary {
-  background: #FF6D00;
-  color: white;
-}
-
-.btn-hero-primary:hover {
-  background: #E65100;
-  border-color: #E65100;
-  color: white;
-  text-decoration: none;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(255,109,0,.4);
-}
-
-.btn-hero-outline {
-  background: white;
-  color: #FF6D00;
-}
-
-.btn-hero-outline:hover {
-  background: #FFF3E0;
-  color: #E65100;
-  border-color: #E65100;
-  text-decoration: none;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(255,109,0,.4);
-}
-.hero-actions {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-bottom: 48px;
-}
-
 .hero-actions .btn-hero-primary,
 .hero-actions .btn-hero-outline {
-  min-width: 180px;
+  display: inline-block !important;
+  padding: 14px 32px !important;
+  border-radius: 8px !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  border: 2px solid #FF6D00 !important;
+  transition: all .15s !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  text-align: center !important;
+  min-width: 180px !important;
+  box-sizing: border-box !important;
+}
+
+.hero-actions .btn-hero-primary {
+  background: #FF6D00 !important;
+  color: white !important;
+}
+
+.hero-actions .btn-hero-primary:hover {
+  background: #E65100 !important;
+  border-color: #E65100 !important;
+  color: white !important;
+  text-decoration: none !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(255,109,0,.4) !important;
+}
+
+.hero-actions .btn-hero-outline {
+  background: white !important;
+  color: #FF6D00 !important;
+}
+
+.hero-actions .btn-hero-outline:hover {
+  background: #FFF3E0 !important;
+  color: #E65100 !important;
+  border-color: #E65100 !important;
+  text-decoration: none !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(255,109,0,.4) !important;
 }
 
 /* ===== RESPONSIVE ===== */
