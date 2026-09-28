@@ -33,7 +33,7 @@ a:hover { text-decoration: underline; }
 .landing-page { background: var(--white); }
 
 .landing-topbar {
-  background: linear-gradient(90deg, #0F9D58 0%, #1E8E3E 100%);
+  background: linear-gradient(90deg, #174EA6 0%, #4285F4 100%);
   color: white;
   padding: 20px 0;
   position: sticky;
