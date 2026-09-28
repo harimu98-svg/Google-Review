@@ -64,6 +64,8 @@ export async function handler(event) {
         return json(200, await cardsDisable(body), headers);
       case 'cards-reset':
         return json(200, await cardsReset(body), headers);
+      case 'cards-update-full':
+        return json(200, await cardsUpdateFull(body), headers);
       default:
         return json(400, { error: 'Action tidak dikenali: ' + action }, headers);
     }
@@ -748,7 +750,51 @@ async function cardsReset(body) {
   if (error) return { error: error.message };
   return { success: true, updated: count || numericIds.length };
 }
+// ============================================
+// CARDS — UPDATE FULL (admin edit semua kolom)
+// ============================================
+async function cardsUpdateFull(body) {
+  const { id, data } = body;
+  if (!id) return { error: 'Card ID tidak ada' };
+  if (!data) return { error: 'Data tidak ada' };
 
+  // Hanya kolom yang diizinkan
+  const allowed = [
+    'card_id', 'type', 'status', 'active',
+    'google_url', 'place_id', 'place_name', 'place_address', 'source',
+    'sales_id', 'reseller_id', 'sold_at', 'harga_jual', 'komisi',
+    'activated_at', 'batch_id', 'printed_at',
+    'nfc_taps', 'qr_scans'
+  ];
+
+  const update = {};
+  Object.keys(data).forEach(k => {
+    if (allowed.includes(k)) update[k] = data[k];
+  });
+
+  if (Object.keys(update).length === 0) {
+    return { error: 'Tidak ada kolom yang valid untuk diupdate' };
+  }
+
+  // Konversi angka
+  if (update.harga_jual !== undefined) update.harga_jual = parseInt(update.harga_jual) || 0;
+  if (update.komisi !== undefined) update.komisi = parseInt(update.komisi) || 0;
+  if (update.nfc_taps !== undefined) update.nfc_taps = parseInt(update.nfc_taps) || 0;
+  if (update.qr_scans !== undefined) update.qr_scans = parseInt(update.qr_scans) || 0;
+
+  // Convert sales_id/reseller_id kosong jadi null
+  if (update.sales_id === '') update.sales_id = null;
+  if (update.reseller_id === '') update.reseller_id = null;
+
+  // Update
+  const { error } = await supabase
+    .from('cards')
+    .update(update)
+    .eq('id', id);
+
+  if (error) return { error: error.message };
+  return { success: true };
+}
 // ============================================
 // HELPER
 // ============================================
