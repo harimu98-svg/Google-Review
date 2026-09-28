@@ -811,10 +811,13 @@ a:hover { text-decoration: underline; }
 .produk-img-real {
   width: 100%;
   aspect-ratio: 1 / 1;
-  object-fit: cover;            /* ← gambar memenuhi, tapi terpotong */
+  object-fit: contain;
+  background: #F1F3F4;
   border-radius: 8px;
   margin-bottom: 16px;
   display: block;
+  padding: 12px;
+  box-sizing: border-box;
 }
 
 .produk-card {
