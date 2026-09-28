@@ -94,28 +94,17 @@
   </div>
 </section>
 
-<!-- ===== PRODUK ===== -->
+<!-- ===== PRODUK & HARGA ===== -->
 <section class="section section-alt" id="produk">
   <div class="landing-container">
-    <h2>Produk Kami</h2>
+    <h2>Produk & Harga</h2>
     <p class="section-sub">Pilih model yang sesuai dengan kebutuhan bisnis Anda.</p>
     <div class="produk-grid" id="produkGrid">
       <div class="loading">Memuat produk...</div>
     </div>
   </div>
 </section>
-
-<!-- ===== HARGA ===== -->
-<section class="section" id="harga">
-  <div class="landing-container">
-    <h2>Harga</h2>
-    <p class="section-sub">Harga terjangkau, kualitas premium.</p>
-    <div class="harga-grid" id="hargaGrid">
-      <div class="loading">Memuat harga...</div>
-    </div>
-  </div>
-</section>
-
+  
 <!-- ===== DAFTAR RESELLER ===== -->
 <section class="section section-alt" id="reseller">
   <div class="landing-container">
@@ -191,7 +180,7 @@ if (loginToggle && loginMenu) {
   });
 }
 
-// ===== LOAD PRODUK =====
+// ===== LOAD PRODUK & HARGA =====
 async function loadProduk() {
   try {
     const res = await fetch('/.netlify/functions/activate', {
@@ -206,18 +195,13 @@ async function loadProduk() {
       return;
     }
 
+    // Render produk + harga dalam 1 card
     document.getElementById('produkGrid').innerHTML = data.data.map(p => `
       <div class="produk-card">
         <div class="produk-img">📇</div>
         <h3>${p.nama}</h3>
         <p>${p.deskripsi || ''}</p>
-      </div>
-    `).join('');
-
-    document.getElementById('hargaGrid').innerHTML = data.data.map(p => `
-      <div class="harga-card">
-        <h3>${p.nama}</h3>
-        <div class="harga-value">Rp ${(p.harga || 0).toLocaleString('id-ID')}</div>
+        <div class="produk-harga">Rp ${(p.harga || 0).toLocaleString('id-ID')}</div>
         <a href="https://wa.me/6281234567890?text=Halo,%20saya%20mau%20pesan%20${encodeURIComponent(p.nama)}" 
            target="_blank" class="btn btn-primary btn-block">Pesan Sekarang</a>
       </div>
