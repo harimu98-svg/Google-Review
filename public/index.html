@@ -195,18 +195,22 @@ async function loadProduk() {
       return;
     }
 
-    // Render produk + harga dalam 1 card
-    document.getElementById('produkGrid').innerHTML = data.data.map(p => `
-      <div class="produk-card">
-        <div class="produk-img">📇</div>
-        <h3>${p.nama}</h3>
-        <p>${p.deskripsi || ''}</p>
-        <div class="produk-harga">Rp ${(p.harga || 0).toLocaleString('id-ID')}</div>
-        <a href="https://wa.me/6281234567890?text=Halo,%20saya%20mau%20pesan%20${encodeURIComponent(p.nama)}" 
-           target="_blank" class="btn btn-primary btn-block">Pesan Sekarang</a>
-      </div>
-    `).join('');
-
+    // Render produk — dengan gambar
+document.getElementById('produkGrid').innerHTML = data.data.map(p => `
+  <div class="produk-card">
+    ${p.gambar 
+      ? `<img src="${p.gambar}" alt="${escapeHtml(p.nama)}" class="produk-img-real" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      : ''
+    }
+    <div class="produk-img" style="display:${p.gambar ? 'none' : 'flex'}">📇</div>
+    <h3>${escapeHtml(p.nama)}</h3>
+    <p>${escapeHtml(p.deskripsi || '')}</p>
+    <div class="produk-harga">Rp ${(p.harga || 0).toLocaleString('id-ID')}</div>
+    <a href="https://wa.me/6281234567890?text=Halo,%20saya%20mau%20pesan%20${encodeURIComponent(p.nama)}" 
+       target="_blank" class="btn btn-primary btn-block">Pesan Sekarang</a>
+  </div>
+`).join('');
+    
   } catch (e) {
     console.error(e);
     document.getElementById('produkGrid').innerHTML = '<div class="error">Gagal memuat produk</div>';
