@@ -74,12 +74,43 @@ export async function handler(event) {
 }
 
 // ============================================
-// AKTIVASI CARD
+// AKTIVASI CARD — dengan validasi PIN
+// PIN = 4 karakter terakhir Card ID (A001, B999)
 // ============================================
 async function activateCard(body) {
-  const { cardId, mode, placeId, placeName, placeAddress, reviewUrl, manualUrl } = body;
+  const { cardId, pin, mode, placeId, placeName, placeAddress, reviewUrl, manualUrl } = body;
+  
   if (!cardId) return { error: 'Card ID tidak ada' };
+  if (!pin) return { error: 'PIN tidak ada' };
 
+  // ===== VALIDASI PIN =====
+  // cardId dari URL = "A001" (kode)
+  // PIN input user = "A001"
+  // Bandingkan langsung (case-insensitive)
+  
+  const pinUpper = String(pin).trim().toUpperCase();
+  const cardIdUpper = String(cardId).trim().toUpperCase();
+  
+  if (pinUpper !== cardIdUpper) {
+    return { error: 'PIN salah. Cek kode di lampiran card.' };
+  }
+
+  // ===== KONVERSI KE NUMERIC ID =====
+  const numericId = codeToNumericId(cardId);
+  if (!numericId) return { error: 'Format Card ID tidak valid' };
+
+  // ===== CEK STATUS CARD =====
+  const { data: card } = await supabase
+    .from('cards')
+    .select('status, sales_id')
+    .eq('id', numericId)
+    .single();
+
+  if (!card) return { error: 'Card tidak ditemukan' };
+  if (card.status === 'activated') return { error: 'Card sudah diaktivasi' };
+  if (card.status === 'disabled') return { error: 'Card dinonaktifkan' };
+
+  // ===== VALIDASI URL =====
   let finalUrl, source, placeData = {};
 
   if (mode === 'places') {
@@ -97,14 +128,9 @@ async function activateCard(body) {
     return { error: 'Mode tidak dikenali' };
   }
 
-  const { data: card } = await supabase
-    .from('cards')
-    .select('sales_id')
-    .eq('id', cardId)
-    .single();
-
+  // ===== HITUNG KOMISI =====
   let komisi = 0;
-  if (card?.sales_id) {
+  if (card.sales_id) {
     const { data: sales } = await supabase
       .from('sales')
       .select('komisi_per_card')
@@ -113,6 +139,7 @@ async function activateCard(body) {
     komisi = sales?.komisi_per_card || 0;
   }
 
+  // ===== UPDATE CARD =====
   const { error } = await supabase
     .from('cards')
     .update({
@@ -123,21 +150,29 @@ async function activateCard(body) {
       komisi: komisi,
       ...placeData
     })
-    .eq('id', cardId)
+    .eq('id', numericId)
     .in('status', ['sold', 'assigned', 'printed', 'activated']);
 
   if (error) return { error: 'Gagal menyimpan' };
   return { success: true, googleUrl: finalUrl };
 }
 
-function validateReviewUrl(input) {
-  if (!input) return null;
-  const url = input.trim();
-  if (/^https:\/\/g\.page\/r\/[\w-]+\/review/.test(url)) return url;
-  if (/^https:\/\/search\.google\.com\/local\/writereview\?placeid=[\w-]+/.test(url)) return url;
-  return null;
+// ============================================
+// Konversi kode (A001) → id numerik (001)
+// ============================================
+function codeToNumericId(code) {
+  const s = String(code).toUpperCase().trim();
+  const m = s.match(/^([A-Z])(\d{3})$/);
+  if (!m) return null;
+  
+  const batch = m[1].charCodeAt(0) - 64;  // A=1, B=2, ...
+  const num = parseInt(m[2], 10);
+  const id = (batch - 1) * 999 + num;
+  
+  return id < 1000 
+    ? String(id).padStart(3, '0') 
+    : String(id);
 }
-
 // ============================================
 // LOGIN
 // ============================================
