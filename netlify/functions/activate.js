@@ -211,7 +211,9 @@ async function cardsCreate(body) {
 
   const lastId = last ? parseInt(last.id) : 0;
   const startId = mulai_dari || lastId + 1;
-
+  
+   const tahun = new Date().getFullYear();   // ← tambah ini
+  
   const rows = [];
   for (let i = 0; i < jumlah; i++) {
     const num = startId + i;
@@ -222,7 +224,7 @@ async function cardsCreate(body) {
 
     rows.push({
       id,
-      card_id: `NFC-QR-2026-${kode}`,
+      card_id: `NFC-QR-${tahun}-${kode}`,   // ← dinamis
       type: type,
       status: 'printed',          // ← GANTI dari 'draft'
       nfc_url: `https://greviewcard.netlify.app/n/${kode}`,
