@@ -57,6 +57,49 @@ function escapeHtml(s) {
   ));
 }
 
+// ===== EXPORT CSV =====
+function exportToCSV(filename, rows, headers) {
+  if (!rows || !rows.length) {
+    alert('Tidak ada data untuk di-export');
+    return;
+  }
+
+  // Header
+  const headerLine = headers.map(h => `"${h.label}"`).join(',');
+
+  // Data rows
+  const dataLines = rows.map(row => {
+    return headers.map(h => {
+      let val = row[h.key];
+      if (val === null || val === undefined) val = '';
+      // Escape double quotes
+      val = String(val).replace(/"/g, '""');
+      return `"${val}"`;
+    }).join(',');
+  });
+
+  // Gabung
+  const csv = [headerLine, ...dataLines].join('\n');
+
+  // Tambah BOM untuk Excel (biar UTF-8 terbaca)
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+
+  // Download
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function getTodayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 // ===== PARSE CARD IDS =====
 function parseCardIds(input) {
   const ids = [];
@@ -106,8 +149,8 @@ function renderPage(page) {
     case 'sell': return renderSell(el);
     case 'assign': return renderAssignSales(el);
     case 'assign-reseller': return renderAssignReseller(el);
-    case 'disable': return renderDisable(el);       // ← BARU
-    case 'reset': return renderReset(el);            // ← BARU
+    case 'disable': return renderDisable(el);
+    case 'reset': return renderReset(el);
     case 'sales': return renderSales(el);
     case 'reseller': return renderReseller(el);
     case 'pendaftar': return renderPendaftar(el);
@@ -131,7 +174,10 @@ async function renderDashboard(el) {
 
   if (session.role === 'admin') {
     el.innerHTML = `
-      <h2>Dashboard Admin</h2>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+        <h2 style="margin:0">Dashboard Admin</h2>
+        <button class="btn btn-success btn-sm" id="exportDashBtn">📥 Export Laporan</button>
+      </div>
       <div class="stats-grid">
         <div class="stat-card"><div class="stat-label">Total Card</div><div class="stat-value">${s.total || 0}</div></div>
         <div class="stat-card"><div class="stat-label">Printed</div><div class="stat-value">${s.printed || 0}</div></div>
@@ -143,6 +189,22 @@ async function renderDashboard(el) {
       </div>
       ${renderSalesReport(data.salesReport || [])}
     `;
+
+    document.getElementById('exportDashBtn').addEventListener('click', () => {
+      const report = data.salesReport || [];
+      exportToCSV(
+        `digicard-laporan-${getTodayStr()}.csv`,
+        report,
+        [
+          { key: 'nama', label: 'Nama Sales' },
+          { key: 'area', label: 'Area' },
+          { key: 'total_card', label: 'Total Card Activated' },
+          { key: 'total_penjualan', label: 'Total Penjualan' },
+          { key: 'total_komisi', label: 'Total Komisi' },
+          { key: 'target', label: 'Target Bulanan' }
+        ]
+      );
+    });
   } else if (session.role === 'sales') {
     el.innerHTML = `
       <h2>Dashboard Saya</h2>
@@ -190,6 +252,7 @@ function renderSalesReport(rows) {
     </div>
   `;
 }
+
 // ===== DISABLE CARD =====
 async function renderDisable(el) {
   el.innerHTML = `
@@ -273,13 +336,13 @@ async function renderReset(el) {
     btn.disabled = false; btn.textContent = '🔄 Reset Card';
   });
 }
+
 // ===== CARDS =====
 async function renderCards(el) {
   let params = {};
   if (session.role === 'sales') params.sales_id = session.sales_id;
   if (session.role === 'reseller') params.reseller_id = session.reseller_id;
 
-  // Fetch PARALEL, bukan berurutan
   const [salesData, resellerData, data] = await Promise.all([
     session.role === 'admin' ? api('sales-list') : Promise.resolve({ data: [] }),
     session.role === 'admin' ? api('reseller-list', {}, { status: 'approved' }) : Promise.resolve({ data: [] }),
@@ -294,7 +357,10 @@ async function renderCards(el) {
 
   el.innerHTML = `
     <h2>${session.role === 'admin' ? 'Semua Card' : 'Card Saya'}</h2>
-    <input type="text" id="searchInput" placeholder="Cari ID / card ID / nama usaha..." class="input-search" style="margin-bottom:16px">
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <input type="text" id="searchInput" placeholder="Cari ID / card ID / nama usaha..." class="input-search" style="flex:1;min-width:200px">
+      <button class="btn btn-success btn-sm" id="exportCardsBtn">📥 Export CSV</button>
+    </div>
     <div id="cardsTable"></div>
   `;
 
@@ -302,6 +368,38 @@ async function renderCards(el) {
     const q = e.target.value.trim();
     const d = await api('cards-search', { ...params, q });
     renderCardsTable(d.data || [], salesMap, resellerMap);
+  });
+
+  document.getElementById('exportCardsBtn').addEventListener('click', () => {
+    const exportRows = (data.data || []).map(c => ({
+      id: c.id,
+      card_id: c.card_id,
+      type: c.type || '',
+      status: c.status,
+      place_name: c.place_name || '',
+      sales: c.sales_id ? (salesMap[c.sales_id] || '') : '',
+      reseller: c.reseller_id ? (resellerMap[c.reseller_id] || '') : '',
+      harga_jual: c.harga_jual || 0,
+      komisi: c.komisi || 0,
+      sold_at: c.sold_at ? new Date(c.sold_at).toLocaleDateString('id-ID') : ''
+    }));
+
+    exportToCSV(
+      `digicard-card-${getTodayStr()}.csv`,
+      exportRows,
+      [
+        { key: 'id', label: 'ID' },
+        { key: 'card_id', label: 'Card ID' },
+        { key: 'type', label: 'Type' },
+        { key: 'status', label: 'Status' },
+        { key: 'place_name', label: 'Nama Usaha' },
+        { key: 'sales', label: 'Sales' },
+        { key: 'reseller', label: 'Reseller' },
+        { key: 'harga_jual', label: 'Harga Jual' },
+        { key: 'komisi', label: 'Komisi' },
+        { key: 'sold_at', label: 'Tanggal Jual' }
+      ]
+    );
   });
 
   renderCardsTable(data.data || [], salesMap, resellerMap);
@@ -376,10 +474,8 @@ function renderPagination(total, currentPage, totalPages) {
 
   let buttons = '';
 
-  // Prev
   buttons += `<button onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
 
-  // Page numbers (max 5 tampil)
   let startPage = Math.max(1, currentPage - 2);
   let endPage = Math.min(totalPages, startPage + 4);
   if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
@@ -398,7 +494,6 @@ function renderPagination(total, currentPage, totalPages) {
     buttons += `<button onclick="goToPage(${totalPages})">${totalPages}</button>`;
   }
 
-  // Next
   buttons += `<button onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>›</button>`;
 
   return `
@@ -416,13 +511,14 @@ window.goToPage = function(page) {
   renderCardsTable(allCardsData, salesMapGlobal, resellerMapGlobal, page);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
+
 // ===== CREATE CARD =====
 async function renderCreate(el) {
   const produkData = await api('produk-list');
   const produkList = produkData.data || [];
 
   el.innerHTML = `
-    <h2>Buat Card Draft</h2>
+    <h2>Buat Card</h2>
     <div class="form-group">
       <label>Type Produk *</label>
       <select id="cardType" required>
@@ -599,12 +695,33 @@ async function renderSales(el) {
 
   el.innerHTML = `
     <h2>Sales</h2>
-    <button class="btn btn-primary" id="addSalesBtn" style="margin-bottom:16px">+ Tambah Sales</button>
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="btn btn-primary" id="addSalesBtn">+ Tambah Sales</button>
+      <button class="btn btn-success" id="exportSalesBtn">📥 Export CSV</button>
+    </div>
     <div id="salesForm"></div>
     <div id="salesTable"></div>
   `;
 
   document.getElementById('addSalesBtn').addEventListener('click', () => renderSalesForm(null));
+
+  document.getElementById('exportSalesBtn').addEventListener('click', () => {
+    exportToCSV(
+      `digicard-sales-${getTodayStr()}.csv`,
+      list,
+      [
+        { key: 'nama', label: 'Nama' },
+        { key: 'username', label: 'Username' },
+        { key: 'email', label: 'Email' },
+        { key: 'no_hp', label: 'No HP' },
+        { key: 'area', label: 'Area' },
+        { key: 'komisi_per_card', label: 'Komisi/Card' },
+        { key: 'target_bulanan', label: 'Target Bulanan' },
+        { key: 'aktif', label: 'Aktif' }
+      ]
+    );
+  });
+
   renderSalesTable(list);
 }
 
@@ -711,12 +828,33 @@ async function renderReseller(el) {
 
   el.innerHTML = `
     <h2>Reseller Aktif</h2>
-    <button class="btn btn-primary" id="addResellerBtn" style="margin-bottom:16px">+ Tambah Reseller</button>
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="btn btn-primary" id="addResellerBtn">+ Tambah Reseller</button>
+      <button class="btn btn-success" id="exportResellerBtn">📥 Export CSV</button>
+    </div>
     <div id="resellerForm"></div>
     <div id="resellerTable"></div>
   `;
 
   document.getElementById('addResellerBtn').addEventListener('click', () => renderResellerForm(null));
+
+  document.getElementById('exportResellerBtn').addEventListener('click', () => {
+    exportToCSV(
+      `digicard-reseller-${getTodayStr()}.csv`,
+      list,
+      [
+        { key: 'nama', label: 'Nama' },
+        { key: 'username', label: 'Username' },
+        { key: 'email', label: 'Email' },
+        { key: 'no_hp', label: 'No HP' },
+        { key: 'area', label: 'Area' },
+        { key: 'alamat', label: 'Alamat' },
+        { key: 'harga_khusus', label: 'Harga Khusus' },
+        { key: 'aktif', label: 'Aktif' }
+      ]
+    );
+  });
+
   renderResellerTable(list);
 }
 
@@ -824,6 +962,9 @@ async function renderPendaftar(el) {
 
   el.innerHTML = `
     <h2>Pendaftar Reseller (Pending)</h2>
+    <div style="margin-bottom:16px">
+      <button class="btn btn-success" id="exportPendaftarBtn">📥 Export CSV</button>
+    </div>
     <div id="approveResult"></div>
     <div class="table-wrapper">
       <div class="table-scroll">
@@ -851,6 +992,32 @@ async function renderPendaftar(el) {
       </div>
     </div>
   `;
+
+  document.getElementById('exportPendaftarBtn').addEventListener('click', () => {
+    const exportRows = list.map(p => ({
+      nama: p.nama,
+      no_hp: p.no_hp,
+      email: p.email || '',
+      area: p.area || '',
+      alamat: p.alamat || '',
+      status: p.status || 'pending',
+      created_at: p.created_at ? new Date(p.created_at).toLocaleDateString('id-ID') : ''
+    }));
+
+    exportToCSV(
+      `digicard-pendaftar-${getTodayStr()}.csv`,
+      exportRows,
+      [
+        { key: 'nama', label: 'Nama' },
+        { key: 'no_hp', label: 'No HP' },
+        { key: 'email', label: 'Email' },
+        { key: 'area', label: 'Area' },
+        { key: 'alamat', label: 'Alamat' },
+        { key: 'status', label: 'Status' },
+        { key: 'created_at', label: 'Tanggal Daftar' }
+      ]
+    );
+  });
 }
 
 window.approvePendaftar = async function(id) {
