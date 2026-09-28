@@ -762,6 +762,61 @@ a:hover { text-decoration: underline; }
   padding-top: 16px;
   border-top: 1px solid var(--border);
 }
+/* ===== HERO BUTTONS (ORANGE) ===== */
+.btn-hero-primary,
+.btn-hero-outline {
+  padding: 14px 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  border: 2px solid #FF6D00;
+  transition: all .15s;
+  display: inline-block;
+  text-decoration: none;
+  cursor: pointer;
+  text-align: center;
+}
+
+.btn-hero-primary {
+  background: #FF6D00;
+  color: white;
+}
+
+.btn-hero-primary:hover {
+  background: #E65100;
+  border-color: #E65100;
+  color: white;
+  text-decoration: none;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255,109,0,.4);
+}
+
+.btn-hero-outline {
+  background: white;
+  color: #FF6D00;
+}
+
+.btn-hero-outline:hover {
+  background: #FFF3E0;
+  color: #E65100;
+  border-color: #E65100;
+  text-decoration: none;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255,109,0,.4);
+}
+.hero-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 48px;
+}
+
+.hero-actions .btn-hero-primary,
+.hero-actions .btn-hero-outline {
+  min-width: 180px;
+}
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
@@ -860,7 +915,6 @@ a:hover { text-decoration: underline; }
     background: var(--hover);
   }
 
-  /* ===== HERO BUTTONS ===== */
   /* ===== HERO BUTTONS ===== */
   .hero-actions {
     flex-direction: row;
