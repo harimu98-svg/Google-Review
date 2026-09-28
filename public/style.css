@@ -1090,7 +1090,33 @@ a:hover { text-decoration: underline; }
 
   .tabs { gap: 2px; }
   .tab { font-size: 12px; padding: 8px 6px; }
-
+   
+  /* ===== FITUR CARD COMPACT ===== */
+  .fitur-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  
+  .fitur-card {
+    padding: 14px 10px;
+    border-top-width: 2px;
+  }
+  
+  .fitur-icon {
+    font-size: 24px;
+    margin-bottom: 6px;
+  }
+  
+  .fitur-card h3 {
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+  
+  .fitur-card p {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+}
   /* ===== PAGINATION ===== */
   .pagination {
     gap: 4px;
