@@ -35,7 +35,7 @@ a:hover { text-decoration: underline; }
 .landing-topbar {
   background: linear-gradient(90deg, #0F9D58 0%, #1E8E3E 100%);
   color: white;
-  padding: 20px 0;          /* ← dari 16px jadi 20px */
+  padding: 20px 0;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -85,7 +85,7 @@ a:hover { text-decoration: underline; }
 }
 
 .landing-logo {
-  width: 56px;         /* dari 36px jadi 56px */
+  width: 56px;
   height: 56px;
   border-radius: 10px;
   object-fit: cover;
@@ -98,7 +98,7 @@ a:hover { text-decoration: underline; }
   display: flex;
   align-items: center;
   gap: 24px;
-  margin-left: auto;        /* ← dorong ke kanan */
+  margin-left: auto;
 }
 
 .landing-nav a {
@@ -112,12 +112,12 @@ a:hover { text-decoration: underline; }
 .login-dropdown {
   position: relative;
   flex-shrink: 0;
-  margin-left: 16px;        /* ← jarak dari nav */
+  margin-left: 16px;
 }
 
 .btn-login {
   background: white;
-  color: #FF6D00;      /* teks orange */
+  color: #FF6D00;
   border: none;
   padding: 10px 20px;
   border-radius: 6px;
@@ -189,10 +189,56 @@ a:hover { text-decoration: underline; }
 
 .hero-actions {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   justify-content: center;
+  align-items: center;
   flex-wrap: wrap;
   margin-bottom: 48px;
+}
+
+/* ===== HERO BUTTONS (ORANGE) ===== */
+.hero-actions .btn-hero-primary,
+.hero-actions .btn-hero-outline {
+  display: inline-block;
+  padding: 14px 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  border: 2px solid #FF6D00;
+  transition: all .15s;
+  text-decoration: none;
+  cursor: pointer;
+  text-align: center;
+  min-width: 180px;
+  box-sizing: border-box;
+}
+
+.hero-actions .btn-hero-primary {
+  background: #FF6D00;
+  color: white;
+}
+
+.hero-actions .btn-hero-primary:hover {
+  background: #E65100;
+  border-color: #E65100;
+  color: white;
+  text-decoration: none;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255,109,0,.4);
+}
+
+.hero-actions .btn-hero-outline {
+  background: white;
+  color: #FF6D00;
+}
+
+.hero-actions .btn-hero-outline:hover {
+  background: #FFF3E0;
+  color: #E65100;
+  border-color: #E65100;
+  text-decoration: none;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255,109,0,.4);
 }
 
 .hero-video {
@@ -259,17 +305,43 @@ a:hover { text-decoration: underline; }
 }
 
 .produk-card {
+  display: flex;
+  flex-direction: column;
   background: white;
-  padding: 24px;
+  padding: 20px;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0,0,0,.06);
   text-align: center;
   border: 1px solid var(--border);
 }
 
-.produk-img { font-size: 64px; margin-bottom: 12px; }
+.produk-card .btn {
+  margin-top: auto;
+}
+
 .produk-card h3 { font-size: 16px; margin-bottom: 8px; }
 .produk-card p { font-size: 14px; color: var(--text-muted); }
+
+.produk-img-real {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: #F1F3F4;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.produk-img { font-size: 64px; margin-bottom: 12px; }
+
+.produk-harga {
+  font-size: 22px;
+  font-weight: 700;
+  color: #FF6D00;
+  margin: 12px 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
 
 /* ===== HARGA ===== */
 .harga-grid {
@@ -364,14 +436,14 @@ a:hover { text-decoration: underline; }
 .btn-outline:hover { background: var(--hover); text-decoration: none; }
 
 .btn-outline-white {
-  background: #FF6D00;              /* ← orange */
-  border: 1px solid #FF6D00;        /* ← border orange */
+  background: #FF6D00;
+  border: 1px solid #FF6D00;
   color: white;
   font-weight: 600;
 }
 
 .btn-outline-white:hover {
-  background: #E65100;              /* ← orange gelap saat hover */
+  background: #E65100;
   border-color: #E65100;
   text-decoration: none;
   transform: translateY(-1px);
@@ -510,7 +582,7 @@ a:hover { text-decoration: underline; }
 }
 
 .topbar h1 {
-  font-size: 18px;
+  font-size: 16px;
   color: white;
   line-height: 1.2;
   font-weight: 700;
@@ -518,14 +590,14 @@ a:hover { text-decoration: underline; }
 
 .topbar .brand span {
   font-size: 11px;
-  opacity: .85;
+  opacity: .8;
   color: white;
   display: block;
   margin-top: 2px;
 }
 
 .topbar-logo {
-  width: 56px;         /* dari 40px jadi 56px */
+  width: 56px;
   height: 56px;
   border-radius: 12px;
   object-fit: cover;
@@ -533,9 +605,6 @@ a:hover { text-decoration: underline; }
   padding: 3px;
   box-shadow: 0 2px 8px rgba(0,0,0,.15);
 }
-
-.topbar h1 { font-size: 16px; color: white; line-height: 1.2; }
-.topbar .brand span { font-size: 11px; opacity: .8; }
 
 .user-info {
   display: flex;
@@ -547,7 +616,7 @@ a:hover { text-decoration: underline; }
 .user-details {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;   /* rata kanan */
+  align-items: flex-end;
   gap: 2px;
   line-height: 1.2;
 }
@@ -749,102 +818,69 @@ a:hover { text-decoration: underline; }
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-.loading { color: var(--text-muted); }
-.empty   { color: var(--text-muted); background: white; }
-.error   { color: var(--gm-red); background: #FCE8E6; }
-.success { color: var(--gm-green); background: #E6F4EA; }
 
-.produk-harga {
-  font-size: 24px;
-  font-weight: 700;
-  color: #FF6D00;
-  margin: 16px 0;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-}
-/* ===== HERO BUTTONS (ORANGE) ===== */
-.hero-actions .btn-hero-primary,
-.hero-actions .btn-hero-outline {
-  display: inline-block !important;
-  padding: 14px 32px !important;
-  border-radius: 8px !important;
-  font-size: 16px !important;
-  font-weight: 700 !important;
-  border: 2px solid #FF6D00 !important;
-  transition: all .15s !important;
-  text-decoration: none !important;
-  cursor: pointer !important;
-  text-align: center !important;
-  min-width: 180px !important;
-  box-sizing: border-box !important;
-}
+.empty   { color: var(--text-muted); background: white; padding: 40px; text-align: center; border-radius: 12px; }
+.error   { color: var(--gm-red); background: #FCE8E6; padding: 16px; border-radius: 8px; margin: 16px 0; text-align: center; }
+.success { color: var(--gm-green); background: #E6F4EA; padding: 16px; border-radius: 8px; margin: 16px 0; text-align: center; }
 
-.hero-actions .btn-hero-primary {
-  background: #FF6D00 !important;
-  color: white !important;
-}
-
-.hero-actions .btn-hero-primary:hover {
-  background: #E65100 !important;
-  border-color: #E65100 !important;
-  color: white !important;
-  text-decoration: none !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 8px 20px rgba(255,109,0,.4) !important;
-}
-
-.hero-actions .btn-hero-outline {
-  background: white !important;
-  color: #FF6D00 !important;
-}
-
-.hero-actions .btn-hero-outline:hover {
-  background: #FFF3E0 !important;
-  color: #E65100 !important;
-  border-color: #E65100 !important;
-  text-decoration: none !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 8px 20px rgba(255,109,0,.4) !important;
-}
-
-/* ===== GAMBAR PRODUK ===== */
-.produk-img-real {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  object-fit: contain;
-  background: #F1F3F4;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  display: block;
-  padding: 12px;
-  box-sizing: border-box;
-}
-
-.produk-card {
+/* ===== PAGINATION ===== */
+.pagination {
   display: flex;
-  flex-direction: column;
-}
-
-.produk-card .btn {
-  margin-top: auto;
-}
-
-.produk-harga {
-  font-size: 22px;
-  font-weight: 700;
-  color: #FF6D00;
-  margin: 12px 0;
-  padding-top: 12px;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  padding: 16px;
+  background: white;
   border-top: 1px solid var(--border);
+  flex-wrap: wrap;
 }
 
-@media (max-width: 768px) {
-  .produk-img-real {
-    height: 160px;
-  }
+.pagination button {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+  font-family: inherit;
+  min-width: 36px;
+  transition: all .15s;
 }
 
-/* ===== RESPONSIVE ===== */
+.pagination button:hover:not(:disabled):not(.active) {
+  background: var(--hover);
+  border-color: var(--gm-blue);
+}
+
+.pagination button.active {
+  background: var(--gm-blue);
+  color: white;
+  border-color: var(--gm-blue);
+  font-weight: 600;
+}
+
+.pagination button:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-size: 13px;
+  color: var(--text-muted);
+  width: 100%;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.pagination-ellipsis {
+  padding: 0 4px;
+  color: var(--text-muted);
+}
+
+/* ============================================
+   RESPONSIVE — MOBILE
+   ============================================ */
 @media (max-width: 768px) {
   /* ===== HERO ===== */
   .hero h1 { font-size: 28px; }
@@ -853,10 +889,8 @@ a:hover { text-decoration: underline; }
   .section { padding: 40px 0; }
   .section h2 { font-size: 24px; }
 
-  /* ===== TOP BAR (LANDING) — MOBILE ===== */
-  .landing-topbar {
-    padding: 12px 0;
-  }
+  /* ===== TOP BAR (LANDING) ===== */
+  .landing-topbar { padding: 12px 0; }
 
   .landing-topbar .landing-container {
     display: flex;
@@ -916,7 +950,6 @@ a:hover { text-decoration: underline; }
     white-space: nowrap;
   }
 
-  /* Login menu di mobile */
   .login-menu {
     position: absolute;
     top: 100%;
@@ -940,29 +973,35 @@ a:hover { text-decoration: underline; }
   .login-menu a:hover {
     background: var(--hover);
   }
- /* ===== HERO BUTTONS ===== */
+
+  /* ===== HERO BUTTONS ===== */
   .hero-actions {
-    display: flex !important;
-    flex-direction: row !important;      /* ← bersebelahan */
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 10px !important;
-    padding: 0 16px !important;
-    flex-wrap: nowrap !important;         /* ← jangan turun ke bawah */
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 16px;
+    flex-wrap: nowrap;
   }
 
   .hero-actions .btn-hero-primary,
   .hero-actions .btn-hero-outline {
-    flex: 1 !important;
-    min-width: 0 !important;
-    padding: 12px 10px !important;
-    font-size: 13px !important;
-    white-space: nowrap !important;
+    flex: 1;
+    min-width: 0;
+    padding: 12px 10px;
+    font-size: 13px;
+    white-space: nowrap;
   }
-}
 
   /* ===== FORM ROW ===== */
   .form-row { grid-template-columns: 1fr; }
+
+  /* ===== PRODUK ===== */
+  .produk-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 
   /* ===== DASHBOARD ===== */
   .container { flex-direction: column; padding: 12px; }
@@ -1057,13 +1096,13 @@ a:hover { text-decoration: underline; }
     gap: 4px;
     padding: 12px 8px;
   }
-  
+
   .pagination button {
     padding: 6px 10px;
     font-size: 12px;
     min-width: 32px;
   }
-  
+
   .pagination-info {
     font-size: 12px;
   }
