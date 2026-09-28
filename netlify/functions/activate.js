@@ -160,19 +160,7 @@ async function activateCard(body) {
 // ============================================
 // Konversi kode (A001) → id numerik (001)
 // ============================================
-function codeToNumericId(code) {
-  const s = String(code).toUpperCase().trim();
-  const m = s.match(/^([A-Z])(\d{3})$/);
-  if (!m) return null;
-  
-  const batch = m[1].charCodeAt(0) - 64;  // A=1, B=2, ...
-  const num = parseInt(m[2], 10);
-  const id = (batch - 1) * 999 + num;
-  
-  return id < 1000 
-    ? String(id).padStart(3, '0') 
-    : String(id);
-}
+
 // ============================================
 // LOGIN
 // ============================================
