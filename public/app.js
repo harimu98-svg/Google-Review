@@ -429,6 +429,8 @@ function renderCardsTable(rows, salesMap = {}, resellerMap = {}, page = 1) {
   const end = start + PER_PAGE;
   const pageRows = rows.slice(start, end);
 
+  const isAdmin = session.role === 'admin';
+
   el.innerHTML = `
     <div class="table-wrapper">
       <div class="table-scroll">
@@ -443,6 +445,7 @@ function renderCardsTable(rows, salesMap = {}, resellerMap = {}, page = 1) {
               <th>Sales</th>
               <th>Reseller</th>
               <th>Harga</th>
+              ${isAdmin ? '<th>Aksi</th>' : ''}
             </tr>
           </thead>
           <tbody>
@@ -456,6 +459,9 @@ function renderCardsTable(rows, salesMap = {}, resellerMap = {}, page = 1) {
                 <td>${r.sales_id ? escapeHtml(salesMap[r.sales_id] || '?') : '-'}</td>
                 <td>${r.reseller_id ? escapeHtml(resellerMap[r.reseller_id] || '?') : '-'}</td>
                 <td>${r.harga_jual ? formatRupiah(r.harga_jual) : '-'}</td>
+                ${isAdmin ? `<td>
+                  <button class="btn btn-outline btn-sm" onclick='editCardFull("${r.id}")'>✏️ Edit</button>
+                </td>` : ''}
               </tr>
             `).join('')}
           </tbody>
@@ -463,6 +469,7 @@ function renderCardsTable(rows, salesMap = {}, resellerMap = {}, page = 1) {
       </div>
       ${renderPagination(rows.length, page, totalPages)}
     </div>
+    <div id="editCardModal"></div>
   `;
 }
 
@@ -1070,6 +1077,183 @@ window.rejectPendaftar = async function(id) {
   if (data.success) renderPage('pendaftar');
   else alert('Gagal: ' + data.error);
 };
+// ============================================
+// EDIT CARD FULL (khusus admin)
+// ============================================
+window.editCardFull = async function(id) {
+  if (session.role !== 'admin') {
+    alert('Hanya admin yang bisa edit card.');
+    return;
+  }
 
+  // Ambil data card dari allCardsData
+  const card = allCardsData.find(c => c.id === id);
+  if (!card) {
+    alert('Card tidak ditemukan');
+    return;
+  }
+
+  // Ambil sales & reseller list untuk dropdown
+  const [salesData, resellerData] = await Promise.all([
+    api('sales-list'),
+    api('reseller-list', {}, { status: 'approved' })
+  ]);
+
+  const salesList = salesData.data || [];
+  const resellerList = resellerData.data || [];
+
+  // Render modal
+  const modal = document.getElementById('editCardModal');
+  modal.innerHTML = `
+    <div class="modal-overlay" onclick="closeEditCard(event)">
+      <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3>✏️ Edit Card: ${escapeHtml(card.card_id)}</h3>
+          <button class="modal-close" onclick="closeEditCard()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <form id="editCardForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label>ID</label>
+                <input type="text" value="${escapeHtml(card.id)}" readonly style="background:#f5f5f5">
+              </div>
+              <div class="form-group">
+                <label>Card ID</label>
+                <input type="text" id="ef_card_id" value="${escapeHtml(card.card_id || '')}">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Type</label>
+                <select id="ef_type">
+                  <option value="a6_tegak" ${card.type === 'a6_tegak' ? 'selected' : ''}>A6 Stand Tegak</option>
+                  <option value="a6_miring" ${card.type === 'a6_miring' ? 'selected' : ''}>A6 Stand Miring</option>
+                  <option value="8x8_tempel" ${card.type === '8x8_tempel' ? 'selected' : ''}>8x8 Tempel</option>
+                  <option value="a6_sticker" ${card.type === 'a6_sticker' ? 'selected' : ''}>A6 Sticker</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Status</label>
+                <select id="ef_status">
+                  <option value="printed" ${card.status === 'printed' ? 'selected' : ''}>Printed</option>
+                  <option value="sold" ${card.status === 'sold' ? 'selected' : ''}>Sold</option>
+                  <option value="assigned" ${card.status === 'assigned' ? 'selected' : ''}>Assigned</option>
+                  <option value="activated" ${card.status === 'activated' ? 'selected' : ''}>Activated</option>
+                  <option value="disabled" ${card.status === 'disabled' ? 'selected' : ''}>Disabled</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Nama Usaha</label>
+              <input type="text" id="ef_place_name" value="${escapeHtml(card.place_name || '')}">
+            </div>
+
+            <div class="form-group">
+              <label>Google Review URL</label>
+              <input type="text" id="ef_google_url" value="${escapeHtml(card.google_url || '')}" placeholder="https://g.page/r/xxx/review">
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Sales</label>
+                <select id="ef_sales_id">
+                  <option value="">-- Tidak Ada --</option>
+                  ${salesList.map(s => `
+                    <option value="${s.id}" ${card.sales_id === s.id ? 'selected' : ''}>${escapeHtml(s.nama)}</option>
+                  `).join('')}
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Reseller</label>
+                <select id="ef_reseller_id">
+                  <option value="">-- Tidak Ada --</option>
+                  ${resellerList.map(r => `
+                    <option value="${r.id}" ${card.reseller_id === r.id ? 'selected' : ''}>${escapeHtml(r.nama)}</option>
+                  `).join('')}
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Harga Jual (Rp)</label>
+                <input type="number" id="ef_harga_jual" value="${card.harga_jual || 0}" min="0">
+              </div>
+              <div class="form-group">
+                <label>Komisi (Rp)</label>
+                <input type="number" id="ef_komisi" value="${card.komisi || 0}" min="0">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>NFC Taps</label>
+                <input type="number" id="ef_nfc_taps" value="${card.nfc_taps || 0}" min="0">
+              </div>
+              <div class="form-group">
+                <label>QR Scans</label>
+                <input type="number" id="ef_qr_scans" value="${card.qr_scans || 0}" min="0">
+              </div>
+            </div>
+
+            <div id="editCardMsg"></div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Simpan</button>
+              <button type="button" class="btn btn-outline" onclick="closeEditCard()">Batal</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Submit
+  document.getElementById('editCardForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type=submit]');
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+
+    const data = {
+      card_id: document.getElementById('ef_card_id').value.trim(),
+      type: document.getElementById('ef_type').value,
+      status: document.getElementById('ef_status').value,
+      place_name: document.getElementById('ef_place_name').value.trim(),
+      google_url: document.getElementById('ef_google_url').value.trim(),
+      sales_id: document.getElementById('ef_sales_id').value || null,
+      reseller_id: document.getElementById('ef_reseller_id').value || null,
+      harga_jual: parseInt(document.getElementById('ef_harga_jual').value) || 0,
+      komisi: parseInt(document.getElementById('ef_komisi').value) || 0,
+      nfc_taps: parseInt(document.getElementById('ef_nfc_taps').value) || 0,
+      qr_scans: parseInt(document.getElementById('ef_qr_scans').value) || 0
+    };
+
+    const result = await api('cards-update-full', { id: card.id, data });
+
+    if (result.success) {
+      document.getElementById('editCardMsg').innerHTML = 
+        '<div class="success">✅ Berhasil disimpan</div>';
+      setTimeout(() => {
+        closeEditCard();
+        renderPage('cards');
+      }, 800);
+    } else {
+      document.getElementById('editCardMsg').innerHTML = 
+        `<div class="error">❌ ${escapeHtml(result.error)}</div>`;
+      btn.disabled = false;
+      btn.textContent = 'Simpan';
+    }
+  });
+};
+
+window.closeEditCard = function(event) {
+  if (event && event.target.classList.contains('modal-box')) return;
+  document.getElementById('editCardModal').innerHTML = '';
+};
 // ===== INITIAL RENDER =====
 renderPage('dashboard');
