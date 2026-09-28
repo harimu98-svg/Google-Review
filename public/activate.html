@@ -3,103 +3,290 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aktivasi Card</title>
+  <title>Aktivasi Card — DIGI CARD</title>
+  <link rel="icon" type="image/jpeg" href="/Assets/logo.jpg">
+  <link rel="stylesheet" href="/style.css">
   <style>
-    * { box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      max-width: 480px; margin: 0 auto; padding: 24px 16px;
-      background: #f7f7f8; color: #1a1a1a;
+    .pin-input {
+      letter-spacing: 6px;
+      font-size: 22px;
+      text-align: center;
+      font-weight: 700;
+      font-family: monospace;
+      text-transform: uppercase;
     }
-    h1 { font-size: 22px; margin-bottom: 4px; }
-    .sub { color: #666; font-size: 14px; margin-bottom: 20px; }
-    .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
-    .tab {
-      flex: 1; padding: 12px; text-align: center; cursor: pointer;
-      background: #eee; border-radius: 10px; font-size: 14px; font-weight: 600;
+    .pin-hint {
+      color: #888;
+      font-size: 12px;
+      display: block;
+      margin-top: 6px;
+      line-height: 1.6;
     }
-    .tab.active { background: #2563eb; color: white; }
-    input {
-      width: 100%; padding: 14px; font-size: 16px;
-      border: 1px solid #ddd; border-radius: 10px; background: white;
+    .pin-error {
+      color: #EA4335;
+      font-size: 13px;
+      margin-top: 8px;
+      text-align: center;
+      min-height: 18px;
     }
-    .results {
-      margin-top: 12px; background: white; border-radius: 10px;
-      overflow: hidden; border: 1px solid #eee;
-    }
-    .result-item {
-      padding: 14px; border-bottom: 1px solid #f0f0f0; cursor: pointer;
-    }
-    .result-item:last-child { border-bottom: none; }
-    .result-item:hover { background: #f0f6ff; }
-    .result-item.selected { background: #e0efff; border-left: 3px solid #2563eb; }
-    .name { font-weight: 600; font-size: 15px; }
-    .addr { font-size: 13px; color: #666; margin-top: 2px; }
-    .meta { font-size: 12px; color: #888; margin-top: 4px; }
-    .empty { padding: 20px; text-align: center; color: #999; font-size: 14px; }
-    button {
-      width: 100%; padding: 16px; font-size: 16px; font-weight: 600;
-      background: #2563eb; color: white; border: none;
-      border-radius: 10px; margin-top: 20px; cursor: pointer;
-    }
-    button:disabled { background: #c7d2e5; cursor: not-allowed; }
-    .success {
-      text-align: center; padding: 40px 16px;
-      background: white; border-radius: 12px;
-    }
-    .success h2 { color: #16a34a; }
-    .hidden { display: none; }
-    .hint { font-size: 13px; color: #666; margin-top: 8px; line-height: 1.5; }
-    .spinner {
-      display: inline-block; width: 14px; height: 14px;
-      border: 2px solid #ccc; border-top-color: #666;
-      border-radius: 50%; animation: spin .6s linear infinite; margin-right: 6px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
-<body>
+<body class="login-page">
 
-<div id="main">
-  <h1>Aktivasi Card</h1>
-  <p class="sub">Card ID: <strong id="cardIdDisplay">-</strong></p>
-
-  <div class="tabs">
-    <div class="tab active" data-mode="places">🔍 Cari Nama Usaha</div>
-    <div class="tab" data-mode="manual">🔗 Paste Link</div>
+<div class="login-box">
+  <div class="login-header">
+    <img src="/Assets/logo2.jpg" alt="DIGI CARD" class="login-logo">
+    <h1>Aktivasi Card</h1>
+    <p>Card ID: <strong id="cardIdDisplay">-</strong></p>
   </div>
 
-  <!-- Mode A: Search Places -->
-  <div id="modePlaces">
-    <input type="search" id="searchInput"
-           placeholder="Contoh: Babeh Barbershop" autocomplete="off">
-    <div id="statusMsg" class="empty hidden"></div>
-    <div id="results" class="results hidden"></div>
+  <!-- STEP 1: PIN -->
+  <div id="stepPin">
+    <div class="form-group">
+      <label>Masukkan PIN Card *</label>
+      <input type="text" id="pinInput" maxlength="4"
+             placeholder="A001" required class="pin-input" autocomplete="off">
+      <small class="pin-hint">
+        PIN = <strong>4 karakter terakhir</strong> Card ID.<br>
+        Contoh: Card <code>A001</code> → PIN <code>A001</code><br>
+        Lihat di lampiran card (kertas terpisah).
+      </small>
+      <div id="pinError" class="pin-error"></div>
+    </div>
+    <button class="btn btn-primary btn-block" id="pinBtn">Lanjut</button>
   </div>
 
-  <!-- Mode B: Paste Link -->
-  <div id="modeManual" class="hidden">
-    <input type="url" id="manualUrl"
-           placeholder="https://g.page/r/xxx/review">
-    <p class="hint">
-      Dapatkan link dari:<br>
-      • <b>Google Business Profile</b> → menu "Minta ulasan"<br>
-      • Atau tombol "Tulis ulasan" di Google Maps (tap kanan → copy link)
-    </p>
+  <!-- STEP 2: Aktivasi (muncul setelah PIN benar) -->
+  <div id="stepActivate" style="display:none">
+    <div class="tabs">
+      <button class="tab active" data-mode="places">🔍 Cari Usaha</button>
+      <button class="tab" data-mode="manual">🔗 Paste Link</button>
+    </div>
+
+    <div id="modePlaces">
+      <input type="search" id="searchInput" class="input-search"
+             placeholder="Cari nama usaha..." autocomplete="off">
+      <div id="statusMsg" style="display:none;padding:12px;text-align:center;color:#888;font-size:14px"></div>
+      <div id="results" style="margin-top:12px"></div>
+    </div>
+
+    <div id="modeManual" style="display:none">
+      <input type="url" id="manualUrl" class="input-search"
+             placeholder="https://g.page/r/xxx/review">
+      <p style="font-size:13px;color:#666;margin-top:8px;line-height:1.5">
+        Dapatkan link dari <strong>Google Business Profile</strong> → menu "Minta ulasan".
+      </p>
+    </div>
+
+    <button class="btn btn-primary btn-block" id="activateBtn" disabled style="margin-top:16px">
+      Aktivasi Card
+    </button>
+    <div id="activateResult"></div>
   </div>
 
-  <button id="submitBtn" disabled>Pilih usaha dulu</button>
+  <div style="text-align:center;margin-top:20px">
+    <a href="/" style="color:#5F6368;font-size:14px">← Kembali ke Beranda</a>
+  </div>
 </div>
 
-<div id="success" class="success hidden">
-  <h2>✅ Aktivasi Berhasil!</h2>
-  <p>Card Anda sekarang terhubung ke:</p>
-  <p><strong id="successName"></strong></p>
-  <p style="font-size:13px;color:#666;margin-top:20px">
-    Tap/scan card ini lagi untuk langsung menuju halaman review.
-  </p>
-</div>
+<script>
+const params = new URLSearchParams(location.search);
+const cardId = params.get('id');
 
-<script src="/activate.js"></script>
+if (!cardId) {
+  document.body.innerHTML = '<p style="padding:40px;text-align:center">Card ID tidak valid.</p>';
+  throw new Error('No cardId');
+}
+
+document.getElementById('cardIdDisplay').textContent = cardId;
+
+// ===== STEP 1: PIN =====
+const pinInput = document.getElementById('pinInput');
+const pinError = document.getElementById('pinError');
+
+pinInput.focus();
+
+// Hanya huruf & angka, otomatis uppercase
+pinInput.addEventListener('input', (e) => {
+  e.target.value = e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 4);
+  pinError.textContent = '';
+});
+
+// Validasi PIN di client
+function validasiPin() {
+  const pin = pinInput.value.trim().toUpperCase();
+  
+  if (pin.length !== 4) {
+    pinError.textContent = 'PIN harus 4 karakter (contoh: A001)';
+    return false;
+  }
+
+  const cardIdUpper = cardId.trim().toUpperCase();
+  if (pin !== cardIdUpper) {
+    pinError.textContent = 'PIN salah. Cek kode di lampiran card.';
+    return false;
+  }
+
+  return true;
+}
+
+document.getElementById('pinBtn').addEventListener('click', () => {
+  if (!validasiPin()) return;
+  document.getElementById('stepPin').style.display = 'none';
+  document.getElementById('stepActivate').style.display = 'block';
+});
+
+// Enter = lanjut
+pinInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') document.getElementById('pinBtn').click();
+});
+
+// ===== STEP 2: Aktivasi =====
+let mode = 'places';
+let selectedPlace = null;
+let debounceTimer = null;
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    mode = tab.dataset.mode;
+    document.getElementById('modePlaces').style.display = mode === 'places' ? 'block' : 'none';
+    document.getElementById('modeManual').style.display = mode === 'manual' ? 'block' : 'none';
+    updateActivateBtn();
+  });
+});
+
+const searchInput = document.getElementById('searchInput');
+const resultsBox = document.getElementById('results');
+const statusMsg = document.getElementById('statusMsg');
+
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim();
+  clearTimeout(debounceTimer);
+  if (q.length < 3) {
+    resultsBox.innerHTML = '';
+    statusMsg.style.display = 'none';
+    return;
+  }
+  statusMsg.style.display = 'block';
+  statusMsg.innerHTML = 'Mencari...';
+  debounceTimer = setTimeout(() => doSearch(q), 500);
+});
+
+async function doSearch(q) {
+  try {
+    const res = await fetch('/api/search-places?q=' + encodeURIComponent(q));
+    const data = await res.json();
+    if (!data.results?.length) {
+      statusMsg.innerHTML = 'Tidak ada hasil. Coba kata kunci lain.';
+      return;
+    }
+    statusMsg.style.display = 'none';
+    renderResults(data.results);
+  } catch (e) {
+    statusMsg.innerHTML = 'Gagal mencari. Coba lagi.';
+  }
+}
+
+function renderResults(results) {
+  resultsBox.innerHTML = results.map(p => `
+    <div class="result-item" data-place='${JSON.stringify(p).replace(/'/g, "&apos;")}'
+         style="padding:12px;border:1px solid #eee;border-radius:8px;margin-bottom:8px;cursor:pointer;background:white">
+      <div style="font-weight:600">${escapeHtml(p.name)}</div>
+      <div style="font-size:13px;color:#666">${escapeHtml(p.address || '')}</div>
+      ${p.rating ? `<div style="font-size:12px;color:#888">⭐ ${p.rating} · ${p.totalReviews || 0} review</div>` : ''}
+    </div>
+  `).join('');
+
+  document.querySelectorAll('.result-item').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.result-item').forEach(x => x.style.background = 'white');
+      el.style.background = '#E8F0FE';
+      selectedPlace = JSON.parse(el.dataset.place.replace(/&apos;/g, "'"));
+      updateActivateBtn();
+    });
+  });
+}
+
+// Manual URL
+const manualUrl = document.getElementById('manualUrl');
+manualUrl.addEventListener('input', updateActivateBtn);
+
+function updateActivateBtn() {
+  const btn = document.getElementById('activateBtn');
+  if (mode === 'places') {
+    btn.disabled = !selectedPlace;
+  } else {
+    const url = manualUrl.value.trim();
+    const valid = /^https:\/\/(g\.page\/r\/[\w-]+\/review|search\.google\.com\/local\/writereview\?placeid=[\w-]+)/.test(url);
+    btn.disabled = !valid;
+  }
+}
+
+// Submit aktivasi
+document.getElementById('activateBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('activateBtn');
+  btn.disabled = true;
+  btn.textContent = 'Memproses...';
+
+  const body = {
+    action: 'activate-card',
+    cardId: cardId,
+    pin: pinInput.value.trim()
+  };
+
+  if (mode === 'places') {
+    body.mode = 'places';
+    body.placeId = selectedPlace.placeId;
+    body.placeName = selectedPlace.name;
+    body.placeAddress = selectedPlace.address;
+    body.reviewUrl = selectedPlace.reviewUrl;
+  } else {
+    body.mode = 'manual';
+    body.manualUrl = manualUrl.value.trim();
+  }
+
+  try {
+    const res = await fetch('/.netlify/functions/activate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      document.querySelector('.login-box').innerHTML = `
+        <div style="text-align:center;padding:40px 20px">
+          <div style="font-size:64px;margin-bottom:16px">✅</div>
+          <h1 style="color:#34A853;margin-bottom:12px">Aktivasi Berhasil!</h1>
+          <p style="color:#666;margin-bottom:24px;line-height:1.6">
+            Card Anda sudah aktif.<br>
+            Customer tinggal tap/scan card untuk memberi review.
+          </p>
+          <a href="/" class="btn btn-primary">Kembali ke Beranda</a>
+        </div>
+      `;
+    } else {
+      document.getElementById('activateResult').innerHTML = 
+        `<div class="error" style="margin-top:12px">❌ ${escapeHtml(data.error)}</div>`;
+      btn.disabled = false;
+      btn.textContent = 'Aktivasi Card';
+    }
+  } catch (e) {
+    document.getElementById('activateResult').innerHTML = 
+      `<div class="error" style="margin-top:12px">❌ Terjadi kesalahan: ${escapeHtml(e.message)}</div>`;
+    btn.disabled = false;
+    btn.textContent = 'Aktivasi Card';
+  }
+});
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => (
+    { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+  ));
+}
+</script>
+
 </body>
 </html>
