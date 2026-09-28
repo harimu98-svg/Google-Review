@@ -806,6 +806,40 @@ a:hover { text-decoration: underline; }
   transform: translateY(-2px) !important;
   box-shadow: 0 8px 20px rgba(255,109,0,.4) !important;
 }
+/* ===== GAMBAR PRODUK ===== */
+.produk-img-real {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  background: #F1F3F4;
+  display: block;
+}
+
+.produk-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.produk-card .btn {
+  margin-top: auto;
+}
+
+.produk-harga {
+  font-size: 22px;
+  font-weight: 700;
+  color: #FF6D00;
+  margin: 12px 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 768px) {
+  .produk-img-real {
+    height: 160px;
+  }
+}
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
