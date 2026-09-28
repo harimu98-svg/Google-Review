@@ -60,10 +60,10 @@ export async function handler(event) {
         return json(200, await resellerApprove(body), headers);
       case 'reseller-reject':
         return json(200, await resellerReject(body), headers);
-        case 'cards-disable':
+      case 'cards-disable':
         return json(200, await cardsDisable(body), headers);
       case 'cards-reset':
-      return json(200, await cardsReset(body), headers);
+        return json(200, await cardsReset(body), headers);
       default:
         return json(400, { error: 'Action tidak dikenali: ' + action }, headers);
     }
@@ -74,8 +74,20 @@ export async function handler(event) {
 }
 
 // ============================================
+// HELPER: Konversi kode (A001) → id numerik (001)
+// ============================================
+function codeToNumericId(code) {
+  const s = String(code).toUpperCase().trim();
+  const m = s.match(/^([A-Z])(\d{3})$/);
+  if (!m) return null;
+  const batch = m[1].charCodeAt(0) - 64;
+  const num = parseInt(m[2], 10);
+  const id = (batch - 1) * 999 + num;
+  return id < 1000 ? String(id).padStart(3, '0') : String(id);
+}
+
+// ============================================
 // AKTIVASI CARD — dengan validasi PIN
-// PIN = 4 karakter terakhir Card ID (A001, B999)
 // ============================================
 async function activateCard(body) {
   const { cardId, pin, mode, placeId, placeName, placeAddress, reviewUrl, manualUrl } = body;
@@ -83,11 +95,6 @@ async function activateCard(body) {
   if (!cardId) return { error: 'Card ID tidak ada' };
   if (!pin) return { error: 'PIN tidak ada' };
 
-  // ===== VALIDASI PIN =====
-  // cardId dari URL = "A001" (kode)
-  // PIN input user = "A001"
-  // Bandingkan langsung (case-insensitive)
-  
   const pinUpper = String(pin).trim().toUpperCase();
   const cardIdUpper = String(cardId).trim().toUpperCase();
   
@@ -95,11 +102,9 @@ async function activateCard(body) {
     return { error: 'PIN salah. Cek kode di lampiran card.' };
   }
 
-  // ===== KONVERSI KE NUMERIC ID =====
   const numericId = codeToNumericId(cardId);
   if (!numericId) return { error: 'Format Card ID tidak valid' };
 
-  // ===== CEK STATUS CARD =====
   const { data: card } = await supabase
     .from('cards')
     .select('status, sales_id')
@@ -110,7 +115,6 @@ async function activateCard(body) {
   if (card.status === 'activated') return { error: 'Card sudah diaktivasi' };
   if (card.status === 'disabled') return { error: 'Card dinonaktifkan' };
 
-  // ===== VALIDASI URL =====
   let finalUrl, source, placeData = {};
 
   if (mode === 'places') {
@@ -128,7 +132,6 @@ async function activateCard(body) {
     return { error: 'Mode tidak dikenali' };
   }
 
-  // ===== HITUNG KOMISI =====
   let komisi = 0;
   if (card.sales_id) {
     const { data: sales } = await supabase
@@ -139,7 +142,6 @@ async function activateCard(body) {
     komisi = sales?.komisi_per_card || 0;
   }
 
-  // ===== UPDATE CARD =====
   const { error } = await supabase
     .from('cards')
     .update({
@@ -157,21 +159,13 @@ async function activateCard(body) {
   return { success: true, googleUrl: finalUrl };
 }
 
-// ============================================
-// Konversi kode (A001) → id numerik (001)
-// ============================================
-function codeToNumericId(code) {
-  const s = String(code).toUpperCase().trim();
-  const m = s.match(/^([A-Z])(\d{3})$/);
-  if (!m) return null;
-  const batch = m[1].charCodeAt(0) - 64;
-  const num = parseInt(m[2], 10);
-  const id = (batch - 1) * 999 + num;
-  return id < 1000
-    ? String(id).padStart(3, '0')
-    : String(id);
+function validateReviewUrl(input) {
+  if (!input) return null;
+  const url = input.trim();
+  if (/^https:\/\/g\.page\/r\/[\w-]+\/review/.test(url)) return url;
+  if (/^https:\/\/search\.google\.com\/local\/writereview\?placeid=[\w-]+/.test(url)) return url;
+  return null;
 }
-
 
 // ============================================
 // LOGIN
@@ -230,7 +224,7 @@ async function login(body) {
 }
 
 // ============================================
-// CARDS — CREATE DRAFT (BATCH)
+// CARDS — CREATE (BATCH)
 // ============================================
 async function cardsCreate(body) {
   const { jumlah, mulai_dari, type } = body;
@@ -246,9 +240,8 @@ async function cardsCreate(body) {
 
   const lastId = last ? parseInt(last.id) : 0;
   const startId = mulai_dari || lastId + 1;
-  
-   const tahun = new Date().getFullYear();   // ← tambah ini
-  
+  const tahun = new Date().getFullYear();
+
   const rows = [];
   for (let i = 0; i < jumlah; i++) {
     const num = startId + i;
@@ -259,9 +252,9 @@ async function cardsCreate(body) {
 
     rows.push({
       id,
-      card_id: `NFC-QR-${tahun}-${kode}`,   // ← dinamis
+      card_id: `NFC-QR-${tahun}-${kode}`,
       type: type,
-      status: 'printed',          // ← GANTI dari 'draft'
+      status: 'printed',
       nfc_url: `https://greviewcard.netlify.app/n/${kode}`,
       qr_url: `https://greviewcard.netlify.app/q/${kode}`,
       batch_id: `BATCH-${new Date().toISOString().slice(0, 7)}`
@@ -278,8 +271,9 @@ async function cardsCreate(body) {
     sampai: rows[rows.length - 1].id
   };
 }
+
 // ============================================
-// CARDS — SELL (admin jual langsung)
+// CARDS — SELL
 // ============================================
 async function cardsSell(body) {
   const { ids, harga_jual } = body;
@@ -297,7 +291,7 @@ async function cardsSell(body) {
     .from('cards')
     .update(update)
     .in('id', numericIds)
-    .in('status', ['printed']);          // ← GANTI dari ['draft', 'printed']
+    .in('status', ['printed']);
 
   if (error) return { error: error.message };
   return { success: true, updated: count || numericIds.length };
@@ -357,16 +351,6 @@ async function cardsAssignReseller(body) {
   return { success: true, updated: count || numericIds.length };
 }
 
-function codeToNumericId(code) {
-  const s = String(code);
-  const m = s.match(/^([A-Z])(\d{3})$/);
-  if (!m) return s;
-  const batch = m[1].charCodeAt(0) - 64;
-  const num = parseInt(m[2], 10);
-  const id = (batch - 1) * 999 + num;
-  return id < 1000 ? String(id).padStart(3, '0') : String(id);
-}
-
 // ============================================
 // CARDS — SEARCH
 // ============================================
@@ -374,8 +358,8 @@ async function cardsSearch(opts) {
   const { q, status, sales_id, reseller_id, dari, sampai, limit = 1000, offset = 0 } = opts;
 
   let query = supabase
-  .from('cards')
-  .select('id, card_id, type, status, active, place_name, sales_id, reseller_id, sold_at, harga_jual, komisi');
+    .from('cards')
+    .select('id, card_id, type, status, active, place_name, sales_id, reseller_id, sold_at, harga_jual, komisi');
 
   if (q) query = query.or(`id.ilike.%${q}%,card_id.ilike.%${q}%,place_name.ilike.%${q}%`);
   if (status) query = query.eq('status', status);
@@ -401,7 +385,7 @@ async function dashboardAdmin(params) {
   const stats = { total: 0, printed: 0, sold: 0, assigned: 0, activated: 0, disabled: 0 };
   (statusCount || []).forEach(c => {
     stats.total++;
-    if (c.status !== 'draft') {           // ← skip draft (kalau masih ada)
+    if (c.status !== 'draft') {
       stats[c.status] = (stats[c.status] || 0) + 1;
     }
   });
@@ -573,7 +557,7 @@ async function produkList() {
 }
 
 // ============================================
-// RESELLER — DAFTAR (publik)
+// RESELLER — DAFTAR
 // ============================================
 async function resellerDaftar(body) {
   const { nama, no_hp, email, alamat, area } = body;
@@ -666,11 +650,9 @@ async function resellerApprove(body) {
   if (err1 || !reseller) return { error: 'Reseller tidak ditemukan' };
   if (reseller.status !== 'pending') return { error: 'Reseller sudah diproses' };
 
-  // Generate username & password
   const baseUsername = 'rs' + (reseller.no_hp || '').slice(-6);
   let username = baseUsername;
 
-  // Cek username unik
   const { data: existing } = await supabase
     .from('reseller')
     .select('id')
@@ -697,12 +679,7 @@ async function resellerApprove(body) {
 
   if (err2) return { error: err2.message };
 
-  return {
-    success: true,
-    username,
-    password,
-    reseller_id
-  };
+  return { success: true, username, password, reseller_id };
 }
 
 async function resellerReject(body) {
@@ -718,6 +695,7 @@ async function resellerReject(body) {
   if (error) return { error: error.message };
   return { success: true };
 }
+
 // ============================================
 // CARDS — DISABLE
 // ============================================
@@ -729,12 +707,9 @@ async function cardsDisable(body) {
 
   const { error, count } = await supabase
     .from('cards')
-    .update({
-      status: 'disabled',
-      active: false
-    })
+    .update({ status: 'disabled', active: false })
     .in('id', numericIds)
-    .neq('status', 'disabled');   // skip yang sudah disabled
+    .neq('status', 'disabled');
 
   if (error) return { error: error.message };
   return { success: true, updated: count || numericIds.length };
@@ -742,7 +717,6 @@ async function cardsDisable(body) {
 
 // ============================================
 // CARDS — RESET
-// Kembalikan ke status 'printed', hapus data aktivasi
 // ============================================
 async function cardsReset(body) {
   const { ids } = body;
@@ -755,20 +729,17 @@ async function cardsReset(body) {
     .update({
       status: 'printed',
       active: false,
-      // Hapus data aktivasi
       google_url: null,
       place_id: null,
       place_name: null,
       place_address: null,
       source: null,
       activated_at: null,
-      // Hapus data penjualan
       sales_id: null,
       reseller_id: null,
       sold_at: null,
       harga_jual: 0,
       komisi: 0,
-      // Reset counter
       nfc_taps: 0,
       qr_scans: 0
     })
@@ -777,6 +748,7 @@ async function cardsReset(body) {
   if (error) return { error: error.message };
   return { success: true, updated: count || numericIds.length };
 }
+
 // ============================================
 // HELPER
 // ============================================
