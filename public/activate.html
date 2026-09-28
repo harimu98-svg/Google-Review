@@ -35,9 +35,9 @@
 
 <div class="login-box">
   <div class="login-header">
-    <img src="/Assets/logo2.jpg" alt="DIGI CARD" class="login-logo">
+    <img src="/Assets/logo.jpg" alt="DIGI CARD" class="login-logo" onerror="this.style.display='none'">
     <h1>Aktivasi Card</h1>
-    <p>Card ID: <strong id="cardIdDisplay">-</strong></p>
+    <!-- Card ID disembunyikan -->
   </div>
 
   <!-- STEP 1: PIN -->
@@ -98,7 +98,7 @@ if (!cardId) {
   throw new Error('No cardId');
 }
 
-document.getElementById('cardIdDisplay').textContent = cardId;
+// Card ID TIDAK ditampilkan di UI
 
 // ===== STEP 1: PIN =====
 const pinInput = document.getElementById('pinInput');
@@ -106,13 +106,11 @@ const pinError = document.getElementById('pinError');
 
 pinInput.focus();
 
-// Hanya huruf & angka, otomatis uppercase
 pinInput.addEventListener('input', (e) => {
   e.target.value = e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 4);
   pinError.textContent = '';
 });
 
-// Validasi PIN di client
 function validasiPin() {
   const pin = pinInput.value.trim().toUpperCase();
   
@@ -136,7 +134,6 @@ document.getElementById('pinBtn').addEventListener('click', () => {
   document.getElementById('stepActivate').style.display = 'block';
 });
 
-// Enter = lanjut
 pinInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') document.getElementById('pinBtn').click();
 });
@@ -209,7 +206,6 @@ function renderResults(results) {
   });
 }
 
-// Manual URL
 const manualUrl = document.getElementById('manualUrl');
 manualUrl.addEventListener('input', updateActivateBtn);
 
@@ -224,7 +220,6 @@ function updateActivateBtn() {
   }
 }
 
-// Submit aktivasi
 document.getElementById('activateBtn').addEventListener('click', async () => {
   const btn = document.getElementById('activateBtn');
   btn.disabled = true;
