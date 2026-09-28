@@ -526,6 +526,7 @@ async function renderCreate(el) {
         ${produkList.map(p => `<option value="${p.id}">${escapeHtml(p.nama)}</option>`).join('')}
       </select>
     </div>
+    <div id="produkPreview"></div>
     <div class="form-group">
       <label>Jumlah Card</label>
       <input type="number" id="jumlah" value="100" min="1" max="1000">
@@ -533,6 +534,31 @@ async function renderCreate(el) {
     <button class="btn btn-primary" id="createBtn">Buat Card</button>
     <div id="createResult"></div>
   `;
+
+  // Preview produk saat pilih type
+  document.getElementById('cardType').addEventListener('change', (e) => {
+    const p = produkList.find(x => x.id === e.target.value);
+    const preview = document.getElementById('produkPreview');
+    
+    if (!p) { preview.innerHTML = ''; return; }
+    
+    preview.innerHTML = `
+      <div class="form-card" style="margin-bottom:16px">
+        <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+          ${p.gambar 
+            ? `<img src="${p.gambar}" alt="${escapeHtml(p.nama)}" 
+                 style="width:120px;height:120px;object-fit:cover;border-radius:8px;background:#F1F3F4">`
+            : `<div style="width:120px;height:120px;border-radius:8px;background:#F1F3F4;display:flex;align-items:center;justify-content:center;font-size:40px">📇</div>`
+          }
+          <div style="flex:1;min-width:200px">
+            <h3 style="margin-bottom:8px">${escapeHtml(p.nama)}</h3>
+            <p style="color:#5F6368;font-size:14px;margin-bottom:8px">${escapeHtml(p.deskripsi || '')}</p>
+            <div style="font-size:20px;font-weight:700;color:#FF6D00">${formatRupiah(p.harga)}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  });
 
   document.getElementById('createBtn').addEventListener('click', async () => {
     const type = document.getElementById('cardType').value;
