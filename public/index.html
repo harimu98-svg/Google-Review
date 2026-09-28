@@ -163,6 +163,13 @@
 </footer>
 
 <script>
+// ===== HELPER =====
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => (
+    { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+  ));
+}
+  
 // ===== LOGIN DROPDOWN =====
 const loginToggle = document.getElementById('loginToggle');
 const loginMenu = document.getElementById('loginMenu');
