@@ -101,30 +101,44 @@ function getTodayStr() {
 }
 
 // ===== PARSE CARD IDS =====
+// ===== PARSE CARD IDS =====
+// Support: A001, A010, A100-A109, A001,A010,A100-A109
 function parseCardIds(input) {
   const ids = [];
   const parts = input.split(',').map(s => s.trim()).filter(Boolean);
 
   for (const part of parts) {
+    // Cek range: A100-A109
     const rangeMatch = part.match(/^([A-Z])(\d{3})\s*-\s*([A-Z]?)(\d{3})$/);
     if (rangeMatch) {
       const [, startLetter, startNum, endLetter, endNum] = rangeMatch;
       const startNumeric = codeToNum(startLetter, startNum);
       const endNumeric = codeToNum(endLetter || startLetter, endNum);
-      if (startNumeric && endNumeric) {
+      
+      if (startNumeric && endNumeric && endNumeric >= startNumeric) {
         for (let i = startNumeric; i <= endNumeric; i++) {
           ids.push(numToCode(i));
         }
         continue;
       }
     }
-    if (/^[A-Z]\d{3}$/.test(part)) { ids.push(part); continue; }
-    if (/^\d+$/.test(part)) { ids.push(part); continue; }
+
+    // Cek satuan: A001
+    if (/^[A-Z]\d{3}$/.test(part)) {
+      ids.push(part);
+      continue;
+    }
+
+    // Cek numerik: 001
+    if (/^\d+$/.test(part)) {
+      ids.push(part);
+      continue;
+    }
   }
 
+  // Hapus duplikat
   return [...new Set(ids)];
 }
-
 function codeToNum(letter, num) {
   const batch = letter.charCodeAt(0) - 64;
   return (batch - 1) * 999 + parseInt(num, 10);
@@ -343,7 +357,6 @@ async function renderCards(el) {
   if (session.role === 'sales') baseParams.sales_id = session.sales_id;
   if (session.role === 'reseller') baseParams.reseller_id = session.reseller_id;
 
-  // Fetch semua data paralel
   const [salesData, resellerData, produkData, batchData, data] = await Promise.all([
     session.role === 'admin' ? api('sales-list') : Promise.resolve({ data: [] }),
     session.role === 'admin' ? api('reseller-list', {}, { status: 'approved' }) : Promise.resolve({ data: [] }),
@@ -363,12 +376,10 @@ async function renderCards(el) {
   const produkList = produkData.data || [];
   const batchList = batchData.data || [];
 
-  // Simpan state global
   window.currentSalesMap = salesMap;
   window.currentResellerMap = resellerMap;
   window.currentCardParams = { ...baseParams };
 
-  // Render UI
   el.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
       <h2 style="margin:0">${session.role === 'admin' ? 'Semua Card' : 'Card Saya'}</h2>
@@ -443,10 +454,7 @@ async function renderCards(el) {
     <div id="cardsTable"></div>
   `;
 
-  // Search dengan debounce
   document.getElementById('searchInput').addEventListener('input', debounce(applyFilter, 400));
-
-  // Filter change
   document.getElementById('filterStatus').addEventListener('change', applyFilter);
   document.getElementById('filterType').addEventListener('change', applyFilter);
   document.getElementById('filterBatch').addEventListener('change', applyFilter);
@@ -458,7 +466,6 @@ async function renderCards(el) {
     document.getElementById('filterReseller').addEventListener('change', applyFilter);
   }
 
-  // Reset
   document.getElementById('resetFilterBtn').addEventListener('click', () => {
     document.getElementById('searchInput').value = '';
     document.getElementById('filterStatus').value = '';
@@ -473,7 +480,6 @@ async function renderCards(el) {
     applyFilter();
   });
 
-  // Export
   document.getElementById('exportCardsBtn').addEventListener('click', async () => {
     const btn = document.getElementById('exportCardsBtn');
     btn.disabled = true;
@@ -493,12 +499,13 @@ async function renderCards(el) {
       const exportRows = d.data.map(c => ({
         id: c.id,
         card_id: c.card_id,
+        pin: c.pin || '',
         type: c.type || '',
         status: c.status || '',
         active: c.active ? 'Ya' : 'Tidak',
+        batch_id: c.batch_id || '',
         nfc_url: c.nfc_url || '',
         qr_url: c.qr_url || '',
-        batch_id: c.batch_id || '',
         google_url: c.google_url || '',
         place_id: c.place_id || '',
         place_name: c.place_name || '',
@@ -522,12 +529,13 @@ async function renderCards(el) {
         [
           { key: 'id', label: 'ID' },
           { key: 'card_id', label: 'Card ID' },
+          { key: 'pin', label: 'PIN' },
           { key: 'type', label: 'Type' },
           { key: 'status', label: 'Status' },
           { key: 'active', label: 'Active' },
+          { key: 'batch_id', label: 'Batch ID' },
           { key: 'nfc_url', label: 'NFC URL' },
           { key: 'qr_url', label: 'QR URL' },
-          { key: 'batch_id', label: 'Batch ID' },
           { key: 'google_url', label: 'Google Review URL' },
           { key: 'place_id', label: 'Place ID' },
           { key: 'place_name', label: 'Nama Usaha' },
@@ -554,10 +562,8 @@ async function renderCards(el) {
     }
   });
 
-  // Render tabel awal
   renderCardsTable(data.data || [], salesMap, resellerMap);
 }
-
 // ===== DEBOUNCE =====
 function debounce(fn, delay) {
   let timer;
@@ -594,7 +600,6 @@ async function applyFilter() {
   if (dari) params.dari = dari;
   if (sampai) params.sampai = sampai;
 
-  // Simpan untuk export
   window.currentCardParams = { ...params };
 
   const d = await api('cards-search', params);
@@ -625,8 +630,6 @@ function renderCardsTable(rows, salesMap = {}, resellerMap = {}, page = 1) {
   const end = start + PER_PAGE;
   const pageRows = rows.slice(start, end);
 
-  const isAdmin = session.role === 'admin';
-
   el.innerHTML = `
     <div class="table-wrapper">
       <div class="table-scroll">
@@ -635,13 +638,14 @@ function renderCardsTable(rows, salesMap = {}, resellerMap = {}, page = 1) {
             <tr>
               <th>ID</th>
               <th>Card ID</th>
+              <th>PIN</th>
               <th>Type</th>
               <th>Status</th>
               <th>Usaha</th>
               <th>Sales</th>
               <th>Reseller</th>
+              <th>Batch</th>
               <th>Harga</th>
-              ${isAdmin ? '<th>Aksi</th>' : ''}
             </tr>
           </thead>
           <tbody>
@@ -649,15 +653,14 @@ function renderCardsTable(rows, salesMap = {}, resellerMap = {}, page = 1) {
               <tr>
                 <td>${r.id}</td>
                 <td>${r.card_id}</td>
+                <td><code style="background:#F1F3F4;padding:2px 8px;border-radius:4px;font-weight:700;letter-spacing:1px">${r.pin || '-'}</code></td>
                 <td>${escapeHtml(r.type || '-')}</td>
                 <td><span class="badge badge-${r.status}">${r.status}</span></td>
                 <td>${escapeHtml(r.place_name || '-')}</td>
                 <td>${r.sales_id ? escapeHtml(salesMap[r.sales_id] || '?') : '-'}</td>
                 <td>${r.reseller_id ? escapeHtml(resellerMap[r.reseller_id] || '?') : '-'}</td>
+                <td><small style="color:#5F6368">${escapeHtml(r.batch_id || '-')}</small></td>
                 <td>${r.harga_jual ? formatRupiah(r.harga_jual) : '-'}</td>
-                ${isAdmin ? `<td>
-                  <button class="btn btn-outline btn-sm" onclick='editCardFull("${r.id}")'>✏️ Edit</button>
-                </td>` : ''}
               </tr>
             `).join('')}
           </tbody>
@@ -665,7 +668,6 @@ function renderCardsTable(rows, salesMap = {}, resellerMap = {}, page = 1) {
       </div>
       ${renderPagination(rows.length, page, totalPages)}
     </div>
-    <div id="editCardModal"></div>
   `;
 }
 
