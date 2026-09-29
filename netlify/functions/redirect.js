@@ -24,10 +24,10 @@ export async function handler(event) {
     `);
   }
 
-  // ← PERBAIKAN: tambah 'status' di select
+  // ← TAMBAH 'card_id' di select
   const { data, error } = await supabase
     .from('cards')
-    .select('google_url, active, status')
+    .select('google_url, active, status, card_id')
     .eq('id', numericId)
     .single();
 
@@ -88,10 +88,10 @@ export async function handler(event) {
     };
   }
 
-  // ← PERBAIKAN: pakai `code`, bukan `id`
+  // ← UBAH: redirect ke halaman aktivasi dengan card_id lengkap
   return {
     statusCode: 302,
-    headers: { Location: `/activate?id=${encodeURIComponent(code)}` }
+    headers: { Location: `/activate?card_id=${encodeURIComponent(data.card_id)}` }
   };
 }
 
