@@ -66,6 +66,10 @@ export async function handler(event) {
         return json(200, await cardsReset(body), headers);
       case 'cards-update-full':
         return json(200, await cardsUpdateFull(body), headers);
+        case 'cards-export':
+      return json(200, await cardsExport({ ...params, ...body }), headers);
+      case 'cards-batch-list':
+  return json(200, await cardsBatchList(), headers);
       default:
         return json(400, { error: 'Action tidak dikenali: ' + action }, headers);
     }
@@ -227,12 +231,28 @@ async function login(body) {
 
 // ============================================
 // CARDS — CREATE (BATCH)
+// batch_id unik per buat card
 // ============================================
 async function cardsCreate(body) {
   const { jumlah, mulai_dari, type } = body;
   if (!jumlah || jumlah < 1) return { error: 'Jumlah tidak valid' };
   if (!type) return { error: 'Pilih type produk' };
 
+  // ===== GENERATE BATCH ID UNIK =====
+  // Format: BATCH-YYYYMMDD-HHMMSS
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  
+  const tahun = now.getFullYear();
+  const bulan = pad(now.getMonth() + 1);
+  const tanggal = pad(now.getDate());
+  const jam = pad(now.getHours());
+  const menit = pad(now.getMinutes());
+  const detik = pad(now.getSeconds());
+  
+  const batch_id = `BATCH-${tahun}${bulan}${tanggal}-${jam}${menit}${detik}`;
+
+  // ===== CARI ID TERAKHIR =====
   const { data: last } = await supabase
     .from('cards')
     .select('id')
@@ -242,8 +262,8 @@ async function cardsCreate(body) {
 
   const lastId = last ? parseInt(last.id) : 0;
   const startId = mulai_dari || lastId + 1;
-  const tahun = new Date().getFullYear();
 
+  // ===== GENERATE ROWS =====
   const rows = [];
   for (let i = 0; i < jumlah; i++) {
     const num = startId + i;
@@ -259,10 +279,11 @@ async function cardsCreate(body) {
       status: 'printed',
       nfc_url: `https://greviewcard.netlify.app/n/${kode}`,
       qr_url: `https://greviewcard.netlify.app/q/${kode}`,
-      batch_id: `BATCH-${new Date().toISOString().slice(0, 7)}`
+      batch_id: batch_id
     });
   }
 
+  // ===== INSERT =====
   const { error } = await supabase.from('cards').insert(rows);
   if (error) return { error: error.message };
 
@@ -270,7 +291,8 @@ async function cardsCreate(body) {
     success: true,
     jumlah: rows.length,
     dari: rows[0].id,
-    sampai: rows[rows.length - 1].id
+    sampai: rows[rows.length - 1].id,
+    batch_id: batch_id
   };
 }
 
@@ -357,18 +379,24 @@ async function cardsAssignReseller(body) {
 // CARDS — SEARCH
 // ============================================
 async function cardsSearch(opts) {
-  const { q, status, sales_id, reseller_id, dari, sampai, limit = 1000, offset = 0 } = opts;
+  const { q, status, type, batch_id, sales_id, reseller_id, dari, sampai, limit = 1000, offset = 0 } = opts;
 
   let query = supabase
     .from('cards')
-    .select('id, card_id, type, status, active, place_name, sales_id, reseller_id, sold_at, harga_jual, komisi');
+    .select('id, card_id, type, status, active, place_name, sales_id, reseller_id, sold_at, harga_jual, komisi, batch_id, created_at');
 
-  if (q) query = query.or(`id.ilike.%${q}%,card_id.ilike.%${q}%,place_name.ilike.%${q}%`);
+  if (q) {
+    query = query.or(
+      `id.ilike.%${q}%,card_id.ilike.%${q}%,place_name.ilike.%${q}%,batch_id.ilike.%${q}%`
+    );
+  }
   if (status) query = query.eq('status', status);
+  if (type) query = query.eq('type', type);
+  if (batch_id) query = query.eq('batch_id', batch_id);
   if (sales_id) query = query.eq('sales_id', sales_id);
   if (reseller_id) query = query.eq('reseller_id', reseller_id);
-  if (dari) query = query.gte('sold_at', dari);
-  if (sampai) query = query.lte('sold_at', sampai);
+  if (dari) query = query.gte('created_at', dari);
+  if (sampai) query = query.lte('created_at', sampai + 'T23:59:59');
 
   query = query.order('id', { ascending: true }).range(offset, offset + limit - 1);
 
@@ -376,7 +404,50 @@ async function cardsSearch(opts) {
   if (error) return { error: error.message };
   return { success: true, data, total: count };
 }
+// ============================================
+// CARDS — EXPORT (semua kolom)
+// ============================================
+async function cardsExport(opts) {
+  const { q, status, type, batch_id, sales_id, reseller_id, dari, sampai } = opts;
 
+  let query = supabase.from('cards').select('*');
+
+  if (q) {
+    query = query.or(
+      `id.ilike.%${q}%,card_id.ilike.%${q}%,place_name.ilike.%${q}%,batch_id.ilike.%${q}%`
+    );
+  }
+  if (status) query = query.eq('status', status);
+  if (type) query = query.eq('type', type);
+  if (batch_id) query = query.eq('batch_id', batch_id);
+  if (sales_id) query = query.eq('sales_id', sales_id);
+  if (reseller_id) query = query.eq('reseller_id', reseller_id);
+  if (dari) query = query.gte('created_at', dari);
+  if (sampai) query = query.lte('created_at', sampai + 'T23:59:59');
+
+  query = query.order('id', { ascending: true });
+
+  const { data, error } = await query;
+  if (error) return { error: error.message };
+  return { success: true, data };
+}
+
+// ============================================
+// CARDS — LIST BATCH (untuk filter dropdown)
+// ============================================
+async function cardsBatchList() {
+  const { data, error } = await supabase
+    .from('cards')
+    .select('batch_id')
+    .not('batch_id', 'is', null)
+    .order('batch_id', { ascending: false });
+
+  if (error) return { error: error.message };
+
+  // Unique batch_id
+  const unique = [...new Set((data || []).map(c => c.batch_id))];
+  return { success: true, data: unique };
+}
 // ============================================
 // DASHBOARD — ADMIN
 // ============================================
