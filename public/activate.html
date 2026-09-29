@@ -94,14 +94,16 @@
 
 <script>
 const params = new URLSearchParams(location.search);
-const cardId = params.get('id');
+
+// Terima 2 format: card_id (full) atau id (kode pendek)
+const cardId = params.get('card_id') || params.get('id');
 
 if (!cardId) {
   document.body.innerHTML = '<p style="padding:40px;text-align:center">Card ID tidak valid.</p>';
   throw new Error('No cardId');
 }
 
-// Tampilkan Card ID di UI
+// Tampilkan card_id lengkap
 document.getElementById('cardIdDisplay').textContent = cardId;
 
 // ===== STEP 1: PIN =====
