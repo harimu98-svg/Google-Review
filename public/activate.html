@@ -101,7 +101,8 @@ if (!cardId) {
   throw new Error('No cardId');
 }
 
-// Card ID TIDAK ditampilkan di UI
+// Tampilkan Card ID di UI
+document.getElementById('cardIdDisplay').textContent = cardId;
 
 // ===== STEP 1: PIN =====
 const pinInput = document.getElementById('pinInput');
