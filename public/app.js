@@ -337,16 +337,19 @@ async function renderReset(el) {
   });
 }
 
-// ===== CARDS =====
+// ===== RENDER CARDS =====
 async function renderCards(el) {
-  let params = {};
-  if (session.role === 'sales') params.sales_id = session.sales_id;
-  if (session.role === 'reseller') params.reseller_id = session.reseller_id;
+  let baseParams = {};
+  if (session.role === 'sales') baseParams.sales_id = session.sales_id;
+  if (session.role === 'reseller') baseParams.reseller_id = session.reseller_id;
 
-  const [salesData, resellerData, data] = await Promise.all([
+  // Fetch semua data paralel
+  const [salesData, resellerData, produkData, batchData, data] = await Promise.all([
     session.role === 'admin' ? api('sales-list') : Promise.resolve({ data: [] }),
     session.role === 'admin' ? api('reseller-list', {}, { status: 'approved' }) : Promise.resolve({ data: [] }),
-    api('cards-search', params)
+    api('produk-list'),
+    api('cards-batch-list'),
+    api('cards-search', baseParams)
   ]);
 
   const salesMap = {};
@@ -355,54 +358,247 @@ async function renderCards(el) {
   const resellerMap = {};
   (resellerData.data || []).forEach(r => { resellerMap[r.id] = r.nama; });
 
+  const salesList = salesData.data || [];
+  const resellerList = resellerData.data || [];
+  const produkList = produkData.data || [];
+  const batchList = batchData.data || [];
+
+  // Simpan state global
+  window.currentSalesMap = salesMap;
+  window.currentResellerMap = resellerMap;
+  window.currentCardParams = { ...baseParams };
+
+  // Render UI
   el.innerHTML = `
-    <h2>${session.role === 'admin' ? 'Semua Card' : 'Card Saya'}</h2>
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-      <input type="text" id="searchInput" placeholder="Cari ID / card ID / nama usaha..." class="input-search" style="flex:1;min-width:200px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <h2 style="margin:0">${session.role === 'admin' ? 'Semua Card' : 'Card Saya'}</h2>
       <button class="btn btn-success btn-sm" id="exportCardsBtn">📥 Export CSV</button>
     </div>
+
+    <input type="text" id="searchInput" 
+           placeholder="Cari: ID, Card ID, Nama Usaha, Batch..." 
+           class="input-search" 
+           style="margin-bottom:12px">
+
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label>Status</label>
+        <select id="filterStatus" class="filter-select">
+          <option value="">Semua</option>
+          <option value="printed">Printed</option>
+          <option value="sold">Sold</option>
+          <option value="assigned">Assigned</option>
+          <option value="activated">Activated</option>
+          <option value="disabled">Disabled</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Type</label>
+        <select id="filterType" class="filter-select">
+          <option value="">Semua</option>
+          ${produkList.map(p => `<option value="${p.id}">${escapeHtml(p.nama)}</option>`).join('')}
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Batch</label>
+        <select id="filterBatch" class="filter-select">
+          <option value="">Semua Batch</option>
+          ${batchList.map(b => `<option value="${b}">${escapeHtml(b)}</option>`).join('')}
+        </select>
+      </div>
+
+      ${session.role === 'admin' ? `
+        <div class="filter-group">
+          <label>Sales</label>
+          <select id="filterSales" class="filter-select">
+            <option value="">Semua</option>
+            ${salesList.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Reseller</label>
+          <select id="filterReseller" class="filter-select">
+            <option value="">Semua</option>
+            ${resellerList.map(r => `<option value="${r.id}">${escapeHtml(r.nama)}</option>`).join('')}
+          </select>
+        </div>
+      ` : ''}
+
+      <div class="filter-group">
+        <label>Dari Tanggal</label>
+        <input type="date" id="filterDari" class="filter-select">
+      </div>
+
+      <div class="filter-group">
+        <label>Sampai Tanggal</label>
+        <input type="date" id="filterSampai" class="filter-select">
+      </div>
+
+      <button class="btn btn-outline btn-sm" id="resetFilterBtn">🔄 Reset</button>
+    </div>
+
     <div id="cardsTable"></div>
   `;
 
-  document.getElementById('searchInput').addEventListener('input', async (e) => {
-    const q = e.target.value.trim();
-    const d = await api('cards-search', { ...params, q });
-    renderCardsTable(d.data || [], salesMap, resellerMap);
+  // Search dengan debounce
+  document.getElementById('searchInput').addEventListener('input', debounce(applyFilter, 400));
+
+  // Filter change
+  document.getElementById('filterStatus').addEventListener('change', applyFilter);
+  document.getElementById('filterType').addEventListener('change', applyFilter);
+  document.getElementById('filterBatch').addEventListener('change', applyFilter);
+  document.getElementById('filterDari').addEventListener('change', applyFilter);
+  document.getElementById('filterSampai').addEventListener('change', applyFilter);
+  
+  if (session.role === 'admin') {
+    document.getElementById('filterSales').addEventListener('change', applyFilter);
+    document.getElementById('filterReseller').addEventListener('change', applyFilter);
+  }
+
+  // Reset
+  document.getElementById('resetFilterBtn').addEventListener('click', () => {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterStatus').value = '';
+    document.getElementById('filterType').value = '';
+    document.getElementById('filterBatch').value = '';
+    document.getElementById('filterDari').value = '';
+    document.getElementById('filterSampai').value = '';
+    if (session.role === 'admin') {
+      document.getElementById('filterSales').value = '';
+      document.getElementById('filterReseller').value = '';
+    }
+    applyFilter();
   });
 
-  document.getElementById('exportCardsBtn').addEventListener('click', () => {
-    const exportRows = (data.data || []).map(c => ({
-      id: c.id,
-      card_id: c.card_id,
-      type: c.type || '',
-      status: c.status,
-      place_name: c.place_name || '',
-      sales: c.sales_id ? (salesMap[c.sales_id] || '') : '',
-      reseller: c.reseller_id ? (resellerMap[c.reseller_id] || '') : '',
-      harga_jual: c.harga_jual || 0,
-      komisi: c.komisi || 0,
-      sold_at: c.sold_at ? new Date(c.sold_at).toLocaleDateString('id-ID') : ''
-    }));
+  // Export
+  document.getElementById('exportCardsBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('exportCardsBtn');
+    btn.disabled = true;
+    btn.textContent = 'Memuat...';
 
-    exportToCSV(
-      `digicard-card-${getTodayStr()}.csv`,
-      exportRows,
-      [
-        { key: 'id', label: 'ID' },
-        { key: 'card_id', label: 'Card ID' },
-        { key: 'type', label: 'Type' },
-        { key: 'status', label: 'Status' },
-        { key: 'place_name', label: 'Nama Usaha' },
-        { key: 'sales', label: 'Sales' },
-        { key: 'reseller', label: 'Reseller' },
-        { key: 'harga_jual', label: 'Harga Jual' },
-        { key: 'komisi', label: 'Komisi' },
-        { key: 'sold_at', label: 'Tanggal Jual' }
-      ]
-    );
+    try {
+      const d = await api('cards-export', window.currentCardParams);
+
+      if (!d.success || !d.data?.length) {
+        alert('Tidak ada data untuk di-export');
+        return;
+      }
+
+      const sMap = window.currentSalesMap;
+      const rMap = window.currentResellerMap;
+
+      const exportRows = d.data.map(c => ({
+        id: c.id,
+        card_id: c.card_id,
+        type: c.type || '',
+        status: c.status || '',
+        active: c.active ? 'Ya' : 'Tidak',
+        nfc_url: c.nfc_url || '',
+        qr_url: c.qr_url || '',
+        batch_id: c.batch_id || '',
+        google_url: c.google_url || '',
+        place_id: c.place_id || '',
+        place_name: c.place_name || '',
+        place_address: c.place_address || '',
+        source: c.source || '',
+        sales: c.sales_id ? (sMap[c.sales_id] || '') : '',
+        reseller: c.reseller_id ? (rMap[c.reseller_id] || '') : '',
+        sold_at: c.sold_at ? new Date(c.sold_at).toLocaleString('id-ID') : '',
+        harga_jual: c.harga_jual || 0,
+        komisi: c.komisi || 0,
+        activated_at: c.activated_at ? new Date(c.activated_at).toLocaleString('id-ID') : '',
+        printed_at: c.printed_at ? new Date(c.printed_at).toLocaleString('id-ID') : '',
+        nfc_taps: c.nfc_taps || 0,
+        qr_scans: c.qr_scans || 0,
+        created_at: c.created_at ? new Date(c.created_at).toLocaleString('id-ID') : ''
+      }));
+
+      exportToCSV(
+        `digicard-card-${getTodayStr()}.csv`,
+        exportRows,
+        [
+          { key: 'id', label: 'ID' },
+          { key: 'card_id', label: 'Card ID' },
+          { key: 'type', label: 'Type' },
+          { key: 'status', label: 'Status' },
+          { key: 'active', label: 'Active' },
+          { key: 'nfc_url', label: 'NFC URL' },
+          { key: 'qr_url', label: 'QR URL' },
+          { key: 'batch_id', label: 'Batch ID' },
+          { key: 'google_url', label: 'Google Review URL' },
+          { key: 'place_id', label: 'Place ID' },
+          { key: 'place_name', label: 'Nama Usaha' },
+          { key: 'place_address', label: 'Alamat Usaha' },
+          { key: 'source', label: 'Source' },
+          { key: 'sales', label: 'Sales' },
+          { key: 'reseller', label: 'Reseller' },
+          { key: 'sold_at', label: 'Tanggal Jual' },
+          { key: 'harga_jual', label: 'Harga Jual' },
+          { key: 'komisi', label: 'Komisi' },
+          { key: 'activated_at', label: 'Tanggal Aktivasi' },
+          { key: 'printed_at', label: 'Tanggal Cetak' },
+          { key: 'nfc_taps', label: 'NFC Taps' },
+          { key: 'qr_scans', label: 'QR Scans' },
+          { key: 'created_at', label: 'Tanggal Dibuat' }
+        ]
+      );
+
+    } catch (e) {
+      alert('Error: ' + e.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '📥 Export CSV';
+    }
   });
 
+  // Render tabel awal
   renderCardsTable(data.data || [], salesMap, resellerMap);
+}
+
+// ===== DEBOUNCE =====
+function debounce(fn, delay) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
+// ===== APPLY FILTER =====
+async function applyFilter() {
+  const q = document.getElementById('searchInput').value.trim();
+  const status = document.getElementById('filterStatus').value;
+  const type = document.getElementById('filterType').value;
+  const batch_id = document.getElementById('filterBatch').value;
+  const dari = document.getElementById('filterDari').value;
+  const sampai = document.getElementById('filterSampai').value;
+
+  let params = {};
+  if (session.role === 'sales') params.sales_id = session.sales_id;
+  if (session.role === 'reseller') params.reseller_id = session.reseller_id;
+
+  if (session.role === 'admin') {
+    const sales = document.getElementById('filterSales')?.value;
+    const reseller = document.getElementById('filterReseller')?.value;
+    if (sales) params.sales_id = sales;
+    if (reseller) params.reseller_id = reseller;
+  }
+
+  if (q) params.q = q;
+  if (status) params.status = status;
+  if (type) params.type = type;
+  if (batch_id) params.batch_id = batch_id;
+  if (dari) params.dari = dari;
+  if (sampai) params.sampai = sampai;
+
+  // Simpan untuk export
+  window.currentCardParams = { ...params };
+
+  const d = await api('cards-search', params);
+  renderCardsTable(d.data || [], window.currentSalesMap, window.currentResellerMap);
 }
 
 // ===== STATE PAGINASI =====
