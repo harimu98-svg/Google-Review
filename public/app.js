@@ -277,10 +277,11 @@ async function renderDisable(el) {
     </p>
 
     <div class="form-group">
-      <label>Card ID — satuan atau range</label>
-      <input type="text" id="cardIds" placeholder="Contoh: B001 atau B001-B010 atau B001, B002">
+      <label>Card ID — satuan, range, atau kombinasi</label>
+      <input type="text" id="cardIds" placeholder="Contoh: A001,A010,A100-A109">
       <small style="color:#888;font-size:12px;display:block;margin-top:4px">
-        Format: <code>B001</code> (satuan), <code>B001-B010</code> (range), <code>B001,B002</code> (multiple)
+        Format: <code>A001</code> (satuan), <code>A100-A109</code> (range), 
+        <code>A001,A010,A100-A109</code> (kombinasi dengan koma)
       </small>
     </div>
 
@@ -310,6 +311,7 @@ async function renderDisable(el) {
   });
 }
 
+ 
 // ===== RESET CARD =====
 async function renderReset(el) {
   el.innerHTML = `
@@ -321,8 +323,12 @@ async function renderReset(el) {
     </p>
 
     <div class="form-group">
-      <label>Card ID — satuan atau range</label>
-      <input type="text" id="cardIds" placeholder="Contoh: B001 atau B001-B010">
+      <label>Card ID — satuan, range, atau kombinasi</label>
+      <input type="text" id="cardIds" placeholder="Contoh: A001,A010,A100-A109">
+      <small style="color:#888;font-size:12px;display:block;margin-top:4px">
+        Format: <code>A001</code> (satuan), <code>A100-A109</code> (range), 
+        <code>A001,A010,A100-A109</code> (kombinasi dengan koma)
+      </small>
     </div>
 
     <button class="btn btn-danger" id="resetBtn">🔄 Reset Card</button>
@@ -350,7 +356,6 @@ async function renderReset(el) {
     btn.disabled = false; btn.textContent = '🔄 Reset Card';
   });
 }
-
 // ===== RENDER CARDS =====
 async function renderCards(el) {
   let baseParams = {};
@@ -791,9 +796,13 @@ async function renderSell(el) {
       Card akan berubah status menjadi <strong>sold</strong>.
     </p>
     <div class="form-group">
-      <label>Card ID — satuan atau range</label>
-      <input type="text" id="cardIds" placeholder="Contoh: B001 atau B001-B010">
-    </div>
+  <label>Card ID — satuan, range, atau kombinasi</label>
+  <input type="text" id="cardIds" placeholder="Contoh: A001,A010,A100-A109">
+  <small style="color:#888;font-size:12px;display:block;margin-top:4px">
+    Format: <code>A001</code> (satuan), <code>A100-A109</code> (range), 
+    <code>A001,A010,A100-A109</code> (kombinasi dengan koma)
+  </small>
+</div>
     <div class="form-group">
       <label>Harga Jual per Card (Rp)</label>
       <input type="number" id="hargaJual" placeholder="150000" min="0">
@@ -829,10 +838,14 @@ async function renderAssignSales(el) {
 
   el.innerHTML = `
     <h2>Assign Sales ke Card</h2>
-    <div class="form-group">
-      <label>Card ID — satuan atau range</label>
-      <input type="text" id="cardIds" placeholder="Contoh: B001 atau B001-B010">
-    </div>
+   <div class="form-group">
+  <label>Card ID — satuan, range, atau kombinasi</label>
+  <input type="text" id="cardIds" placeholder="Contoh: A001,A010,A100-A109">
+  <small style="color:#888;font-size:12px;display:block;margin-top:4px">
+    Format: <code>A001</code> (satuan), <code>A100-A109</code> (range), 
+    <code>A001,A010,A100-A109</code> (kombinasi dengan koma)
+  </small>
+</div>
     <div class="form-group">
       <label>Pilih Sales</label>
       <select id="salesSelect">
@@ -878,9 +891,13 @@ async function renderAssignReseller(el) {
   el.innerHTML = `
     <h2>Assign Reseller ke Card</h2>
     <div class="form-group">
-      <label>Card ID — satuan atau range</label>
-      <input type="text" id="cardIds" placeholder="Contoh: B001 atau B001-B010">
-    </div>
+  <label>Card ID — satuan, range, atau kombinasi</label>
+  <input type="text" id="cardIds" placeholder="Contoh: A001,A010,A100-A109">
+  <small style="color:#888;font-size:12px;display:block;margin-top:4px">
+    Format: <code>A001</code> (satuan), <code>A100-A109</code> (range), 
+    <code>A001,A010,A100-A109</code> (kombinasi dengan koma)
+  </small>
+</div>
     <div class="form-group">
       <label>Pilih Reseller</label>
       <select id="resellerSelect">
