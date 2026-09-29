@@ -78,7 +78,12 @@ export async function handler(event) {
     return json(500, { error: err.message }, headers);
   }
 }
-
+// ============================================
+// HELPER: Generate PIN 4 digit acak
+// ============================================
+function generatePin() {
+  return String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+}
 // ============================================
 // HELPER: Konversi kode (A001) → id numerik (001)
 // ============================================
@@ -93,7 +98,7 @@ function codeToNumericId(code) {
 }
 
 // ============================================
-// AKTIVASI CARD — dengan validasi PIN
+// AKTIVASI CARD — validasi PIN dari database
 // ============================================
 async function activateCard(body) {
   const { cardId, pin, mode, placeId, placeName, placeAddress, reviewUrl, manualUrl } = body;
@@ -101,26 +106,36 @@ async function activateCard(body) {
   if (!cardId) return { error: 'Card ID tidak ada' };
   if (!pin) return { error: 'PIN tidak ada' };
 
-  const pinUpper = String(pin).trim().toUpperCase();
-  const cardIdUpper = String(cardId).trim().toUpperCase();
-  
-  if (pinUpper !== cardIdUpper) {
-    return { error: 'PIN salah. Cek kode di lampiran card.' };
-  }
-
+  // ===== KONVERSI KE NUMERIC ID =====
   const numericId = codeToNumericId(cardId);
   if (!numericId) return { error: 'Format Card ID tidak valid' };
 
+  // ===== AMBIL CARD DARI DATABASE =====
   const { data: card } = await supabase
     .from('cards')
-    .select('status, sales_id')
+    .select('pin, status, sales_id')
     .eq('id', numericId)
     .single();
 
   if (!card) return { error: 'Card tidak ditemukan' };
+
+  // ===== VALIDASI PIN =====
+  const pinInput = String(pin).trim();
+  const pinDb = String(card.pin || '').trim();
+
+  if (!pinDb) {
+    return { error: 'PIN belum di-set. Hubungi admin.' };
+  }
+
+  if (pinInput !== pinDb) {
+    return { error: 'PIN salah. Cek lampiran card.' };
+  }
+
+  // ===== CEK STATUS =====
   if (card.status === 'activated') return { error: 'Card sudah diaktivasi' };
   if (card.status === 'disabled') return { error: 'Card dinonaktifkan' };
 
+  // ===== VALIDASI URL =====
   let finalUrl, source, placeData = {};
 
   if (mode === 'places') {
@@ -138,6 +153,7 @@ async function activateCard(body) {
     return { error: 'Mode tidak dikenali' };
   }
 
+  // ===== HITUNG KOMISI =====
   let komisi = 0;
   if (card.sales_id) {
     const { data: sales } = await supabase
@@ -148,6 +164,7 @@ async function activateCard(body) {
     komisi = sales?.komisi_per_card || 0;
   }
 
+  // ===== UPDATE CARD =====
   const { error } = await supabase
     .from('cards')
     .update({
@@ -163,14 +180,6 @@ async function activateCard(body) {
 
   if (error) return { error: 'Gagal menyimpan' };
   return { success: true, googleUrl: finalUrl };
-}
-
-function validateReviewUrl(input) {
-  if (!input) return null;
-  const url = input.trim();
-  if (/^https:\/\/g\.page\/r\/[\w-]+\/review/.test(url)) return url;
-  if (/^https:\/\/search\.google\.com\/local\/writereview\?placeid=[\w-]+/.test(url)) return url;
-  return null;
 }
 
 // ============================================
@@ -231,7 +240,7 @@ async function login(body) {
 
 // ============================================
 // CARDS — CREATE (BATCH)
-// batch_id unik per buat card
+// batch_id unik + PIN acak
 // ============================================
 async function cardsCreate(body) {
   const { jumlah, mulai_dari, type } = body;
@@ -239,7 +248,6 @@ async function cardsCreate(body) {
   if (!type) return { error: 'Pilih type produk' };
 
   // ===== GENERATE BATCH ID UNIK =====
-  // Format: BATCH-YYYYMMDD-HHMMSS
   const now = new Date();
   const pad = (n) => String(n).padStart(2, '0');
   
@@ -279,11 +287,11 @@ async function cardsCreate(body) {
       status: 'printed',
       nfc_url: `https://greviewcard.netlify.app/n/${kode}`,
       qr_url: `https://greviewcard.netlify.app/q/${kode}`,
-      batch_id: batch_id
+      batch_id: batch_id,
+      pin: generatePin()   // ← PIN 4 digit acak
     });
   }
 
-  // ===== INSERT =====
   const { error } = await supabase.from('cards').insert(rows);
   if (error) return { error: error.message };
 
@@ -295,7 +303,6 @@ async function cardsCreate(body) {
     batch_id: batch_id
   };
 }
-
 // ============================================
 // CARDS — SELL
 // ============================================
@@ -383,7 +390,7 @@ async function cardsSearch(opts) {
 
   let query = supabase
     .from('cards')
-    .select('id, card_id, type, status, active, place_name, sales_id, reseller_id, sold_at, harga_jual, komisi, batch_id, created_at');
+    .select('id, card_id, type, status, active, place_name, sales_id, reseller_id, sold_at, harga_jual, komisi, batch_id, pin, created_at');
 
   if (q) {
     query = query.or(
@@ -404,6 +411,7 @@ async function cardsSearch(opts) {
   if (error) return { error: error.message };
   return { success: true, data, total: count };
 }
+
 // ============================================
 // CARDS — EXPORT (semua kolom)
 // ============================================
@@ -433,7 +441,7 @@ async function cardsExport(opts) {
 }
 
 // ============================================
-// CARDS — LIST BATCH (untuk filter dropdown)
+// CARDS — LIST BATCH
 // ============================================
 async function cardsBatchList() {
   const { data, error } = await supabase
@@ -444,7 +452,6 @@ async function cardsBatchList() {
 
   if (error) return { error: error.message };
 
-  // Unique batch_id
   const unique = [...new Set((data || []).map(c => c.batch_id))];
   return { success: true, data: unique };
 }
