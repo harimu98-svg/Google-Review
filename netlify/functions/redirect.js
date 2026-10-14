@@ -81,10 +81,17 @@ export async function handler(event) {
   }
 
   // Sudah aktif → redirect ke Google Review
-if (data.active && data.google_url) {
+  if (data.active && data.google_url) {
+    return {
+      statusCode: 302,
+      headers: { Location: data.google_url }
+    };
+  }
+
+  // ← UBAH: redirect ke halaman aktivasi dengan card_id lengkap
   return {
     statusCode: 302,
-    headers: { Location: data.google_url }
+    headers: { Location: `/activate?card_id=${encodeURIComponent(data.card_id)}` }
   };
 }
 
