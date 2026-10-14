@@ -87,7 +87,41 @@ function generatePin() {
 // ============================================
 // HELPER: Konversi kode (A001) → id numerik (001)
 // ============================================
+// ============================================
+// HELPER: Konversi kode → id numerik
+// Handle 3 format:
+//   - "NFC-QR-2026-A001" → "001"
+//   - "A001" → "001"
+//   - "001" → "001"
+// ============================================
 function codeToNumericId(code) {
+  let s = String(code).toUpperCase().trim();
+
+  // === Format 1: Full card ID → ekstrak kode ===
+  // "NFC-QR-2026-A001" → "A001"
+  const fullMatch = s.match(/-([A-Z]\d{3})$/);
+  if (fullMatch) {
+    s = fullMatch[1];
+  }
+
+  // === Format 2: Kode (A001, B123) → numerik ===
+  const kodeMatch = s.match(/^([A-Z])(\d{3})$/);
+  if (kodeMatch) {
+    const batch = kodeMatch[1].charCodeAt(0) - 64;
+    const num = parseInt(kodeMatch[2], 10);
+    const id = (batch - 1) * 999 + num;
+    return id < 1000 ? String(id).padStart(3, '0') : String(id);
+  }
+
+  // === Format 3: Numerik (001, 1000) → langsung ===
+  if (/^\d+$/.test(s)) {
+    const num = parseInt(s, 10);
+    return num < 1000 ? String(num).padStart(3, '0') : String(num);
+  }
+
+  // === Format tidak dikenali ===
+  return null;
+} {
   const s = String(code).toUpperCase().trim();
   const m = s.match(/^([A-Z])(\d{3})$/);
   if (!m) return null;
