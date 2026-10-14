@@ -85,9 +85,6 @@ function generatePin() {
   return String(Math.floor(Math.random() * 10000)).padStart(4, '0');
 }
 // ============================================
-// HELPER: Konversi kode (A001) → id numerik (001)
-// ============================================
-// ============================================
 // HELPER: Konversi kode → id numerik
 // Handle 3 format:
 //   - "NFC-QR-2026-A001" → "001"
@@ -121,16 +118,7 @@ function codeToNumericId(code) {
 
   // === Format tidak dikenali ===
   return null;
-} {
-  const s = String(code).toUpperCase().trim();
-  const m = s.match(/^([A-Z])(\d{3})$/);
-  if (!m) return null;
-  const batch = m[1].charCodeAt(0) - 64;
-  const num = parseInt(m[2], 10);
-  const id = (batch - 1) * 999 + num;
-  return id < 1000 ? String(id).padStart(3, '0') : String(id);
 }
-
 // ============================================
 // AKTIVASI CARD — validasi PIN dari database
 // ============================================
