@@ -66,10 +66,10 @@ export async function handler(event) {
         return json(200, await cardsReset(body), headers);
       case 'cards-update-full':
         return json(200, await cardsUpdateFull(body), headers);
-        case 'cards-export':
-      return json(200, await cardsExport({ ...params, ...body }), headers);
+      case 'cards-export':
+        return json(200, await cardsExport({ ...params, ...body }), headers);
       case 'cards-batch-list':
-  return json(200, await cardsBatchList(), headers);
+        return json(200, await cardsBatchList(), headers);
       default:
         return json(400, { error: 'Action tidak dikenali: ' + action }, headers);
     }
@@ -78,12 +78,14 @@ export async function handler(event) {
     return json(500, { error: err.message }, headers);
   }
 }
+
 // ============================================
 // HELPER: Generate PIN 4 digit acak
 // ============================================
 function generatePin() {
   return String(Math.floor(Math.random() * 10000)).padStart(4, '0');
 }
+
 // ============================================
 // HELPER: Konversi kode → id numerik
 // Handle 3 format:
@@ -94,14 +96,13 @@ function generatePin() {
 function codeToNumericId(code) {
   let s = String(code).toUpperCase().trim();
 
-  // === Format 1: Full card ID → ekstrak kode ===
-  // "NFC-QR-2026-A001" → "A001"
+  // Format 1: Full card ID → ekstrak kode
   const fullMatch = s.match(/-([A-Z]\d{3})$/);
   if (fullMatch) {
     s = fullMatch[1];
   }
 
-  // === Format 2: Kode (A001, B123) → numerik ===
+  // Format 2: Kode (A001, B123) → numerik
   const kodeMatch = s.match(/^([A-Z])(\d{3})$/);
   if (kodeMatch) {
     const batch = kodeMatch[1].charCodeAt(0) - 64;
@@ -110,36 +111,62 @@ function codeToNumericId(code) {
     return id < 1000 ? String(id).padStart(3, '0') : String(id);
   }
 
-  // === Format 3: Numerik (001, 1000) → langsung ===
+  // Format 3: Numerik (001, 1000) → langsung
   if (/^\d+$/.test(s)) {
     const num = parseInt(s, 10);
     return num < 1000 ? String(num).padStart(3, '0') : String(num);
   }
 
-  // === Format tidak dikenali ===
   return null;
 }
+
 // ============================================
-// AKTIVASI CARD — validasi PIN dari database
+// VALIDASI URL REVIEW
+// Return: { valid: true, url, type } atau { valid: false, reason }
 // ============================================
+function validateReviewUrl(input) {
+  if (!input) return { valid: false, reason: 'URL kosong' };
+  const url = input.trim();
+
+  // ✅ Paling baik: link GBP (g.page/r/xxx/review)
+  if (/^https:\/\/g\.page\/r\/[\w-]+\/review/.test(url)) {
+    return { valid: true, url, type: 'gbp' };
+  }
+
+  // ⚠️ OK: writereview (prompt di NFC)
+  if (/^https:\/\/search\.google\.com\/local\/writereview\?placeid=[\w-]+/.test(url)) {
+    return { valid: true, url, type: 'writereview' };
+  }
+
+  // ❌ Tolak: Google Maps
+  if (/google\.com\/maps|maps\.app\.goo\.gl|goo\.gl\/maps/.test(url)) {
+    return {
+      valid: false,
+      reason: 'Link Google Maps tidak bisa dipakai. Gunakan link dari Google Business Profile (menu "Minta ulasan").'
+    };
+  }
+
+  return { valid: false, reason: 'Format URL tidak dikenali' };
+}
+
 // ============================================
 // AKTIVASI CARD — validasi PIN dari database
 // ============================================
 async function activateCard(body) {
   const { cardId, pin, mode, placeId, placeName, placeAddress, reviewUrl, manualUrl } = body;
-  
+
   if (!cardId) return { error: 'Card ID tidak ada' };
   if (!pin) return { error: 'PIN tidak ada' };
 
   // ===== NORMALISASI cardId =====
   let kode = String(cardId).trim().toUpperCase();
-  
+
   // Format 1: "NFC-QR-2026-A023" → ekstrak "A023"
   const fullMatch = kode.match(/-([A-Z]\d{3})$/);
   if (fullMatch) {
     kode = fullMatch[1];
   }
-  
+
   // Format 2: "023" (numerik) → konversi ke "A023"
   if (/^\d+$/.test(kode)) {
     const num = parseInt(kode, 10);
@@ -194,10 +221,12 @@ async function activateCard(body) {
     source = 'places_api';
     placeData = { place_id: placeId, place_name: placeName, place_address: placeAddress };
   } else if (mode === 'manual') {
-    const validated = validateReviewUrl(manualUrl);
-    if (!validated) return { error: 'Link tidak valid' };
-    finalUrl = validated;
-    source = 'manual_paste';
+    const result = validateReviewUrl(manualUrl);
+    if (!result.valid) {
+      return { error: result.reason };
+    }
+    finalUrl = result.url;
+    source = result.type === 'gbp' ? 'manual_gbp' : 'manual_paste';
   } else {
     return { error: 'Mode tidak dikenali' };
   }
@@ -289,7 +318,6 @@ async function login(body) {
 
 // ============================================
 // CARDS — CREATE (BATCH)
-// batch_id unik + PIN acak
 // ============================================
 async function cardsCreate(body) {
   const { jumlah, mulai_dari, type } = body;
@@ -299,14 +327,13 @@ async function cardsCreate(body) {
   // ===== GENERATE BATCH ID UNIK =====
   const now = new Date();
   const pad = (n) => String(n).padStart(2, '0');
-  
   const tahun = now.getFullYear();
   const bulan = pad(now.getMonth() + 1);
   const tanggal = pad(now.getDate());
   const jam = pad(now.getHours());
   const menit = pad(now.getMinutes());
   const detik = pad(now.getSeconds());
-  
+
   const batch_id = `BATCH-${tahun}${bulan}${tanggal}-${jam}${menit}${detik}`;
 
   // ===== CARI ID TERAKHIR =====
@@ -337,7 +364,7 @@ async function cardsCreate(body) {
       nfc_url: `https://greviewcard.netlify.app/n/${kode}`,
       qr_url: `https://greviewcard.netlify.app/q/${kode}`,
       batch_id: batch_id,
-      pin: generatePin()   // ← PIN 4 digit acak
+      pin: generatePin()
     });
   }
 
@@ -352,6 +379,7 @@ async function cardsCreate(body) {
     batch_id: batch_id
   };
 }
+
 // ============================================
 // CARDS — SELL
 // ============================================
@@ -462,7 +490,7 @@ async function cardsSearch(opts) {
 }
 
 // ============================================
-// CARDS — EXPORT (semua kolom)
+// CARDS — EXPORT
 // ============================================
 async function cardsExport(opts) {
   const { q, status, type, batch_id, sales_id, reseller_id, dari, sampai } = opts;
@@ -504,6 +532,7 @@ async function cardsBatchList() {
   const unique = [...new Set((data || []).map(c => c.batch_id))];
   return { success: true, data: unique };
 }
+
 // ============================================
 // DASHBOARD — ADMIN
 // ============================================
@@ -877,15 +906,15 @@ async function cardsReset(body) {
   if (error) return { error: error.message };
   return { success: true, updated: count || numericIds.length };
 }
+
 // ============================================
-// CARDS — UPDATE FULL (admin edit semua kolom)
+// CARDS — UPDATE FULL
 // ============================================
 async function cardsUpdateFull(body) {
   const { id, data } = body;
   if (!id) return { error: 'Card ID tidak ada' };
   if (!data) return { error: 'Data tidak ada' };
 
-  // Hanya kolom yang diizinkan
   const allowed = [
     'card_id', 'type', 'status', 'active',
     'google_url', 'place_id', 'place_name', 'place_address', 'source',
@@ -903,17 +932,14 @@ async function cardsUpdateFull(body) {
     return { error: 'Tidak ada kolom yang valid untuk diupdate' };
   }
 
-  // Konversi angka
   if (update.harga_jual !== undefined) update.harga_jual = parseInt(update.harga_jual) || 0;
   if (update.komisi !== undefined) update.komisi = parseInt(update.komisi) || 0;
   if (update.nfc_taps !== undefined) update.nfc_taps = parseInt(update.nfc_taps) || 0;
   if (update.qr_scans !== undefined) update.qr_scans = parseInt(update.qr_scans) || 0;
 
-  // Convert sales_id/reseller_id kosong jadi null
   if (update.sales_id === '') update.sales_id = null;
   if (update.reseller_id === '') update.reseller_id = null;
 
-  // Update
   const { error } = await supabase
     .from('cards')
     .update(update)
@@ -922,6 +948,7 @@ async function cardsUpdateFull(body) {
   if (error) return { error: error.message };
   return { success: true };
 }
+
 // ============================================
 // HELPER
 // ============================================
