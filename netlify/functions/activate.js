@@ -225,8 +225,8 @@ async function activateCard(body) {
     if (!result.valid) {
       return { error: result.reason };
     }
-    finalUrl = result.url;
-    source = result.type === 'gbp' ? 'manual_gbp' : 'manual_paste';
+     finalUrl = result.url;
+  source = 'manual_paste';   // ← selalu manual_paste
   } else {
     return { error: 'Mode tidak dikenali' };
   }
