@@ -70,9 +70,7 @@ export async function handler(event) {
         return json(200, await cardsExport({ ...params, ...body }), headers);
       case 'cards-batch-list':
         return json(200, await cardsBatchList(), headers);
-        case 'get-card-url':
-      return json(200, await getCardUrl(body), headers);
-      default:
+    default:
         return json(400, { error: 'Action tidak dikenali: ' + action }, headers);
     }
   } catch (err) {
@@ -950,34 +948,7 @@ async function cardsUpdateFull(body) {
   if (error) return { error: error.message };
   return { success: true };
 }
-// ============================================
-// GET CARD URL — untuk redirect bertingkat
-// ============================================
-async function getCardUrl(body) {
-  const { cardId } = body;
-  if (!cardId) return { error: 'Card ID tidak ada' };
 
-  // Konversi ke numeric
-  const numericId = codeToNumericId(cardId);
-  if (!numericId) return { error: 'Format Card ID tidak valid' };
-
-  // Ambil google_url dari database
-  const { data: card } = await supabase
-    .from('cards')
-    .select('google_url, active, status')
-    .eq('id', numericId)
-    .single();
-
-  if (!card) return { error: 'Card tidak ditemukan' };
-  if (!card.active || !card.google_url) {
-    return { error: 'Card belum diaktivasi' };
-  }
-
-  return {
-    success: true,
-    google_url: card.google_url
-  };
-}
 // ============================================
 // HELPER
 // ============================================
