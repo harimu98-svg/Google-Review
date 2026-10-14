@@ -100,14 +100,41 @@ function codeToNumericId(code) {
 // ============================================
 // AKTIVASI CARD — validasi PIN dari database
 // ============================================
+// ============================================
+// AKTIVASI CARD — validasi PIN dari database
+// ============================================
 async function activateCard(body) {
   const { cardId, pin, mode, placeId, placeName, placeAddress, reviewUrl, manualUrl } = body;
   
   if (!cardId) return { error: 'Card ID tidak ada' };
   if (!pin) return { error: 'PIN tidak ada' };
 
+  // ===== NORMALISASI cardId =====
+  let kode = String(cardId).trim().toUpperCase();
+  
+  // Format 1: "NFC-QR-2026-A023" → ekstrak "A023"
+  const fullMatch = kode.match(/-([A-Z]\d{3})$/);
+  if (fullMatch) {
+    kode = fullMatch[1];
+  }
+  
+  // Format 2: "023" (numerik) → konversi ke "A023"
+  if (/^\d+$/.test(kode)) {
+    const num = parseInt(kode, 10);
+    const batchIndex = Math.ceil(num / 999);
+    const letter = String.fromCharCode(64 + batchIndex);
+    const nomor = ((num - 1) % 999) + 1;
+    kode = letter + String(nomor).padStart(3, '0');
+  }
+
+  // ===== VALIDASI FORMAT =====
+  if (!/^[A-Z]\d{3}$/.test(kode)) {
+    console.error('Format cardId tidak valid:', { cardId, kode });
+    return { error: 'Format Card ID tidak valid: ' + cardId };
+  }
+
   // ===== KONVERSI KE NUMERIC ID =====
-  const numericId = codeToNumericId(cardId);
+  const numericId = codeToNumericId(kode);
   if (!numericId) return { error: 'Format Card ID tidak valid' };
 
   // ===== AMBIL CARD DARI DATABASE =====
