@@ -61,26 +61,65 @@
 
   <!-- STEP 2: Aktivasi (muncul setelah PIN benar) -->
   <div id="stepActivate" style="display:none">
-    <div class="tabs">
-      <button class="tab active" data-mode="places">🔍 Cari Usaha</button>
-      <button class="tab" data-mode="manual">🔗 Paste Link</button>
-    </div>
+   <div class="tabs">
+  <button class="tab active" data-mode="manual">🔗 Paste Link</button>
+  <button class="tab" data-mode="places">🔍 Cari Usaha</button>
+</div>
 
-    <div id="modePlaces">
+   <div id="modeManual">
+  <!-- Input paste -->
+  <label style="font-size:13px;font-weight:600;color:#202124;display:block;margin-bottom:6px">
+    Paste Link GBP di Sini:
+  </label>
+  <input type="url" id="manualUrl" class="input-search"
+         placeholder="https://g.page/r/xxx/review"
+         style="font-family:monospace;font-size:13px">
+  
+  <!-- Hint -->
+  <p style="font-size:13px;color:#666;margin-top:8px;line-height:1.5">
+    Dapatkan link dari <strong>Google Business Profile</strong> → menu "Minta ulasan".
+  </p>
+  
+  <!-- TOMBOL BARU: Buka GBP -->
+  <a href="https://business.google.com/reviews" 
+     target="_blank" 
+     rel="noopener"
+     class="btn btn-success btn-block"
+     style="margin-top:12px;text-decoration:none;padding:12px;font-size:14px">
+    📋 Buka Google Business Profile →
+  </a>
+  
+  <p style="font-size:11px;color:#999;margin-top:6px;text-align:center">
+    Buka di tab baru · Login Google jika diminta · Pilih usaha Anda → "Minta ulasan" → Copy link
+  </p>
+  
+  <!-- Panduan -->
+  <div style="background:#E6F4EA;padding:12px;border-radius:8px;margin-top:12px;font-size:12px;line-height:1.7;color:#137333">
+    <strong>📝 Cara copy link:</strong><br>
+    <strong>1.</strong> Klik tombol di atas<br>
+    <strong>2.</strong> Login Google (kalau diminta)<br>
+    <strong>3.</strong> <strong>Pilih usaha Anda</strong><br>
+    <strong>4.</strong> Cari menu <b>"Minta ulasan"</b><br>
+    <strong>5.</strong> Copy link (<code>g.page/r/xxx/review</code>)<br>
+    <strong>6.</strong> Kembali ke halaman ini<br>
+    <strong>7.</strong> Paste di kolom atas
+  </div>
+  
+  <!-- Warning -->
+  <div style="background:#FEF7E0;padding:10px;border-radius:8px;margin-top:8px;font-size:11px;line-height:1.5;color:#92400E">
+    <strong>⚠️ Link yang benar:</strong> <code>https://g.page/r/xxx/review</code><br>
+    <strong>❌ Jangan pakai:</strong> maps.app.goo.gl / google.com/maps
+  </div>
+</div>
+    
+    <div id="modePlaces" style="display:none">
       <input type="search" id="searchInput" class="input-search"
              placeholder="Cari nama usaha..." autocomplete="off">
       <div id="statusMsg" style="display:none;padding:12px;text-align:center;color:#888;font-size:14px"></div>
       <div id="results" style="margin-top:12px"></div>
     </div>
 
-    <div id="modeManual" style="display:none">
-      <input type="url" id="manualUrl" class="input-search"
-             placeholder="https://g.page/r/xxx/review">
-      <p style="font-size:13px;color:#666;margin-top:8px;line-height:1.5">
-        Dapatkan link dari <strong>Google Business Profile</strong> → menu "Minta ulasan".
-      </p>
-    </div>
-
+  
     <button class="btn btn-primary btn-block" id="activateBtn" disabled style="margin-top:16px">
       Aktivasi Card
     </button>
@@ -140,7 +179,7 @@ pinInput.addEventListener('keypress', (e) => {
 });
 
 // ===== STEP 2: Aktivasi =====
-let mode = 'places';
+let mode = 'manual';   // ← default manual
 let selectedPlace = null;
 let debounceTimer = null;
 
