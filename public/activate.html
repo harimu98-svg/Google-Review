@@ -90,7 +90,7 @@
   </a>
   
   <p style="font-size:11px;color:#999;margin-top:6px;text-align:center">
-    Buka di tab baru · Login Google jika diminta ·
+    · Login menggunakan akun Google Owner jika diminta ·
   </p>
   
   <!-- Panduan -->
@@ -98,8 +98,8 @@
     <strong>📝 Cara copy link:</strong><br>
     <strong>1.</strong> Klik tombol di atas<br>
     <strong>2.</strong> Login Google (kalau diminta)<br>
-    <strong>3.</strong> <strong>Pilih/Klik usaha Anda</strong><br>
-    <strong>4.</strong> Cari menu <b>"Dapatkan Lebih Banyak Ulasan"</b> Klik<br>
+    <strong>3.</strong> Pilih & Klik usaha Anda<br>
+    <strong>4.</strong> Cari menu & Klik <b>"Dapatkan Lebih Banyak Ulasan"</b><br>
     <strong>5.</strong> Copy link (<code>g.page/r/xxx/review</code>)<br>
     <strong>6.</strong> Kembali ke halaman ini<br>
     <strong>7.</strong> Paste di kolom atas
@@ -109,6 +109,7 @@
   <div style="background:#FEF7E0;padding:10px;border-radius:8px;margin-top:8px;font-size:11px;line-height:1.5;color:#92400E">
     <strong>⚠️ Link yang benar:</strong> <code>https://g.page/r/xxx/review</code><br>
     <strong>❌ Jangan pakai:</strong> maps.app.goo.gl / google.com/maps
+    <strong>Support WA:</strong> 0811-159-429
   </div>
 </div>
     
@@ -247,7 +248,42 @@ function renderResults(results) {
 }
 
 const manualUrl = document.getElementById('manualUrl');
-manualUrl.addEventListener('input', updateActivateBtn);
+
+// ===== FUNGSI POTONG TEKS SEBELUM HTTPS =====
+function extractUrl(text) {
+  if (!text) return '';
+  
+  // Cari "http" di text
+  const httpIndex = text.indexOf('http');
+  
+  // Kalau tidak ada http → return text asli (biar validasi handle)
+  if (httpIndex === -1) return text.trim();
+  
+  // Kalau ada http → potong dari http sampai akhir
+  return text.substring(httpIndex).trim();
+}
+
+// Listener input — auto potong
+manualUrl.addEventListener('input', (e) => {
+  const original = e.target.value;
+  const extracted = extractUrl(original);
+  
+  // Kalau hasil potong beda dengan asli → update input
+  if (extracted !== original.trim() && extracted.startsWith('http')) {
+    e.target.value = extracted;
+  }
+  
+  updateActivateBtn();
+});
+
+// Listener paste — potong saat paste
+manualUrl.addEventListener('paste', (e) => {
+  e.preventDefault();
+  const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+  const extracted = extractUrl(pastedText);
+  manualUrl.value = extracted;
+  updateActivateBtn();
+});
 
 function updateActivateBtn() {
   const btn = document.getElementById('activateBtn');
