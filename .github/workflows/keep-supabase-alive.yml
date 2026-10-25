@@ -1,0 +1,22 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # Berjalan setiap hari pada pukul 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Memungkinkan Anda menjalankannya secara manual dari tab Actions
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase Database
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          # Ganti 'cards' dengan nama tabel yang ada di database Anda
+          curl -fsS \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            "$SUPABASE_URL/rest/v1/cards?select=id&limit=1"
