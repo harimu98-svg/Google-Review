@@ -9,13 +9,13 @@
 # ============================================
 [[redirects]]
   from = "/n/*"
-  to = "https://greviewcard-redirect.username.workers.dev/n/:splat"
+  to = "https://greviewcard-redirect.harimu98.workers.dev/n/:splat"
   status = 302
   force = true
 
 [[redirects]]
   from = "/q/*"
-  to = "https://greviewcard-redirect.username.workers.dev/q/:splat"
+  to = "https://greviewcard-redirect.harimu98.workers.dev/q/:splat"
   status = 302
   force = true
 # ============================================
