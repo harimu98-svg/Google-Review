@@ -361,8 +361,8 @@ async function cardsCreate(body) {
       card_id: `NFC-QR-${tahun}-${kode}`,
       type: type,
       status: 'printed',
-      nfc_url: `https://greviewcard.netlify.app/n/${kode}`,
-      qr_url: `https://greviewcard.netlify.app/q/${kode}`,
+      nfc_url: `https://greviewcard-redirect.harimu98.workers.dev/n/${kode}`, // <--- URL CLOUDFLARE
+      qr_url: `https://greviewcard-redirect.harimu98.workers.dev/q/${kode}`,  // <--- URL CLOUDFLARE
       batch_id: batch_id,
       pin: generatePin()
     });
