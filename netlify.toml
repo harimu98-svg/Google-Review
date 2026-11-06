@@ -4,7 +4,20 @@
 
 [functions]
   node_bundler = "esbuild"
+# ============================================
+# REDIRECT KE CLOUDFLARE WORKERS
+# ============================================
+[[redirects]]
+  from = "/n/*"
+  to = "https://greviewcard-redirect.username.workers.dev/n/:splat"
+  status = 302
+  force = true
 
+[[redirects]]
+  from = "/q/*"
+  to = "https://greviewcard-redirect.username.workers.dev/q/:splat"
+  status = 302
+  force = true
 # ============================================
 # REDIRECT RULES
 # ============================================
